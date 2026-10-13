@@ -1,5 +1,5 @@
 use crate::mark::Mark;
-use crate::color::Premultiplied;
+use crate::color::{OPAQUE, Premultiplied};
 use crate::image::Image;
 use crate::layer::Layer;
 use crate::bounds::Bounds;
@@ -49,11 +49,15 @@ impl Fitness {
         self.total
     }
 
+    pub fn occupied(&self, x: usize, y: usize) -> f32 {
+        self.current[y * self.width + x].alpha as f32 / OPAQUE as f32
+    }
+
     pub fn error_at(&self, x: usize, y: usize) -> u32 {
         self.error[y * self.width + x]
     }
 
-    pub fn delta(&self, mark: &Mark, rgb: [f32; 3]) -> i64 {
+    pub fn delta(&self, mark: &Mark) -> i64 {
         let bounds = mark.bounds();
         let (mut before, mut after) = (0u64, 0u64);
         for y in bounds.top..bounds.bottom {
@@ -63,7 +67,7 @@ impl Fitness {
                     continue;
                 }
                 let index = y * self.width + x;
-                let painted = Premultiplied::from_rgb(rgb, coverage).over(self.current[index]).over(self.below[index]);
+                let painted = Premultiplied::from_rgb(mark.rgb_at(x, y), coverage).over(self.current[index]).over(self.below[index]);
                 after += pixel_error(painted, self.reference[index], self.weight[index]) as u64;
                 before += self.error[index] as u64;
             }

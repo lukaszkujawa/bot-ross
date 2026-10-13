@@ -1,4 +1,41 @@
+use serde::{Deserialize, Serialize};
+
 pub const OPAQUE: u16 = 1 << 15;
+const HUE_SHARE: f32 = 0.15;
+
+pub fn parse_hex(hex: &str) -> Result<[f32; 3], String> {
+    let digits = hex.strip_prefix('#').filter(|digits| digits.len() == 6).ok_or_else(|| format!("colour must be #rrggbb, got {hex}"))?;
+    let channel = |index: usize| digits.get(index..index + 2).and_then(|pair| u8::from_str_radix(pair, 16).ok()).map(|v| v as f32 / 255.0).ok_or_else(|| format!("colour must be #rrggbb, got {hex}"));
+    Ok([channel(0)?, channel(2)?, channel(4)?])
+}
+
+pub fn hex([r, g, b]: [f32; 3]) -> String {
+    let byte = |channel: f32| (channel.clamp(0.0, 1.0) * 255.0).round() as u8;
+    format!("#{:02x}{:02x}{:02x}", byte(r), byte(g), byte(b))
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Deserialize, Serialize)]
+#[serde(try_from = "String", into = "String")]
+pub struct Swatch(pub Hsv);
+
+impl TryFrom<String> for Swatch {
+    type Error = String;
+
+    fn try_from(hex: String) -> Result<Self, String> {
+        parse_hex(&hex).map(|rgb| Self(Hsv::from_rgb(rgb)))
+    }
+}
+
+impl From<Swatch> for String {
+    fn from(swatch: Swatch) -> String {
+        hex(swatch.0.to_rgb())
+    }
+}
+
+pub fn pick_swatch(palette: &[Swatch], pick: &mut impl FnMut([f32; 2]) -> f32) -> Option<Hsv> {
+    let index = ((pick([0.0, 1.0]) * palette.len() as f32) as usize).min(palette.len().checked_sub(1)?);
+    Some(palette[index].0)
+}
 
 pub fn luminance([r, g, b]: [f32; 3]) -> f32 {
     r * 0.3 + g * 0.5 + b * 0.2
@@ -16,8 +53,25 @@ impl Hsv {
         Self { value: (self.value + delta).clamp(0.0, 1.0), ..self }
     }
 
+    pub fn saturated(self, saturation: f32) -> Self {
+        Self { saturation: (self.saturation * saturation).clamp(0.0, 1.0), ..self }
+    }
+
+    pub fn dimmed(self, factor: f32) -> Self {
+        Self { value: (self.value * factor).clamp(0.0, 1.0), ..self }
+    }
+
     pub fn contrasted(self, contrast: f32) -> Self {
         Self { value: (0.5 + (self.value - 0.5) * contrast).clamp(0.0, 1.0), ..self }
+    }
+
+    pub fn jittered(self, amount: f32, pick: &mut impl FnMut([f32; 2]) -> f32) -> Self {
+        let range = [-amount, amount];
+        Self {
+            hue: (self.hue + pick(range) * HUE_SHARE).rem_euclid(1.0),
+            saturation: (self.saturation + pick(range)).clamp(0.0, 1.0),
+            value: (self.value + pick(range)).clamp(0.0, 1.0),
+        }
     }
 
     pub fn from_rgb([r, g, b]: [f32; 3]) -> Self {

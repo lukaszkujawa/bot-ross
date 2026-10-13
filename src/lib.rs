@@ -16,5 +16,6 @@ pub mod painting;
 pub mod placement;
 pub mod proxy;
 pub mod reference;
+pub mod shape;
 pub mod stroke;
 pub mod window;

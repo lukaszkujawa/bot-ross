@@ -1,0 +1,98 @@
+[canvas]
+background = "white"
+
+[search]
+candidates = 8
+refinements = 2
+
+[brushes]
+air = { file = "../brushes/airbrush.toml" }
+round = { file = "../brushes/soft_round.toml" }
+dry = { file = "../brushes/dry_brush.toml" }
+liner = { file = "../brushes/liner.toml" }
+pen = { file = "../brushes/pen.toml" }
+
+[regions]
+paper = { centre = [384, 540], radius = 320, weight = 1.0, outside = 0.03, feather = 0.6 }
+figure = { centre = [384, 600], radius = 300, weight = 2.0, outside = 0.03, feather = 0.4 }
+face = { centre = [384, 420], radius = 220, weight = 4.0, outside = 0.05, feather = 0.5 }
+
+[shapes]
+wash = { points = [5, 10], radius = [70, 220], irregular = 0.7, follow = 0.5, soft = [20, 70], jitter = 0.12, opacity = 0.4, palette = ["#8fa3b8", "#9aa786", "#c8a85a", "#b7c3c9", "#7f8c6a"] }
+glaze = { points = [5, 9], radius = [25, 100], irregular = 0.7, follow = 0.9, soft = [4, 16], jitter = 0.08, saturation = 1.3, opacity = 0.4 }
+splatter = { points = [5, 8], radius = [40, 120], irregular = 0.6, jitter = 0.1, opacity = 0.5, palette = ["#8fa3b8", "#9aa786", "#c8a85a"], fill = { style = "dots", spacing = [10, 18], radius = [1, 3] } }
+
+[strokes]
+bleed = { radius = [30, 70], length = [80, 260], bend = [0.1, 0.4], pressure = "hand", jitter = 0.12, opacity = 0.6, palette = ["#8fa3b8", "#9aa786", "#c8a85a", "#b7c3c9"] }
+knit = { radius = [3, 7], length = [40, 160], bend = [0.0, 0.1], pressure = "fading", jitter = 0.05, follow = 0.8 }
+skin = { radius = [5, 14], length = [15, 60], bend = [0.0, 0.2], pressure = "flat", jitter = 0.02, follow = 0.4 }
+strand = { radius = [0.6, 1.5], length = [30, 160], bend = [0.1, 0.4], pressure = "fading", jitter = 0.05, follow = 0.9 }
+detail = { radius = [0.5, 1.2], length = [5, 30], bend = [0.0, 0.1], pressure = "flat", jitter = 0.0, follow = 0.9 }
+
+[[layers]]
+name = "washes"
+shape = "wash"
+count = 260
+region = "paper"
+accident = 0.7
+reference = { blur = 14 }
+
+[[layers]]
+name = "bleeds"
+brush = "air"
+stroke = "bleed"
+count = 300
+region = "paper"
+accident = 0.5
+reference = { blur = 8 }
+
+[[layers]]
+name = "glazes"
+shape = "glaze"
+count = 500
+region = "figure"
+accident = 0.15
+reference = { smooth = 6 }
+
+[[layers]]
+name = "splatter"
+shape = "splatter"
+count = 25
+region = "paper"
+placement = "random"
+accident = 1.0
+reference = { blur = 8 }
+
+[[layers]]
+name = "knit"
+brush = "dry"
+stroke = "knit"
+count = 600
+region = "figure"
+reference = { smooth = 3 }
+
+[[layers]]
+name = "skin"
+brush = "round"
+stroke = "skin"
+count = 1500
+region = "face"
+reference = { smooth = 4 }
+
+[[layers]]
+name = "strands"
+brush = "liner"
+stroke = "strand"
+count = 800
+region = "face"
+placement = "edges"
+reference = { smooth = 2, edges = 2.0 }
+
+[[layers]]
+name = "details"
+brush = "pen"
+stroke = "detail"
+count = 1200
+region = "face"
+placement = "edges"
+reference = { smooth = 2, edges = 4.0 }

@@ -51,8 +51,12 @@ impl Reference {
     }
 
     pub fn mean_along(&self, curve: &Curve) -> [f32; 3] {
-        let samples = (0..CURVE_SAMPLES).map(|i| self.sample(curve.at(i as f32 / (CURVE_SAMPLES - 1) as f32)));
-        mean(samples, CURVE_SAMPLES)
+        self.mean_at((0..CURVE_SAMPLES).map(|i| curve.at(i as f32 / (CURVE_SAMPLES - 1) as f32)))
+    }
+
+    pub fn mean_at(&self, points: impl ExactSizeIterator<Item = Point>) -> [f32; 3] {
+        let count = points.len();
+        mean(points.map(|point| self.sample(point)), count)
     }
 
     pub fn mean(&self) -> [f32; 3] {

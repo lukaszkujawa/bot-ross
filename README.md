@@ -41,7 +41,7 @@ make test
 
 ## Configuration
 
-A painting is a TOML file. Brushes, stroke types and regions are defined once by name and assigned to layers, or written inline on a layer. All sizes are pixels at the working resolution. Ranges are always `[min, max]`; everything else is a single value.
+A painting is a TOML file. Brushes, stroke types, shape types and regions are defined once by name and assigned to layers, or written inline on a layer. A layer paints either strokes through a brush or polygons with a fill. All sizes are pixels at the working resolution. Ranges are always `[min, max]`; everything else is a single value.
 
 ```toml
 [canvas]
@@ -67,9 +67,28 @@ bend = [0.0, 0.3]                # control-point offset as a fraction of length;
 pressure = "hand"                # "hand" | "flat" | "fading"; default "hand"
 jitter = 0.05                    # colour mutation step; default 0.05
 contrast = 1.0                   # stroke lightness spread around mid grey: 0 flattens every stroke to mid, 2 pushes light strokes to white and dark ones to black; default 1.0
+saturation = 1.0                 # palette: multiplies the sampled colour's saturation, 0 paints in grey; default 1.0
+value = 1.0                      # palette: multiplies the sampled colour's lightness, 0 paints every stroke black like ink; default 1.0
+palette = ["#8fa3b8", "#c8a85a"] # optional #rrggbb colours; each stroke takes one at random instead of sampling the reference, then the keys above still apply
 follow = 0.6                     # 0..1 attraction of stroke direction to contours in the reference; default 0
 opacity = 1.0                    # multiplier on the brush's opacity, for glazing; default 1.0
 aim = [512, 400]                 # optional point in px; with follow, strokes run toward or away from it instead of along contours
+
+[shapes.tile]
+points = [4, 6]                  # vertex count, single integer or [min, max]; at least 3
+radius = [12, 40]                # circumradius in px, required
+irregular = 0.25                 # 0..1 how far vertices stray from even spacing and from the full radius; 0 gives regular polygons, 1 any lopsided shape; default 0
+follow = 0.8                     # 0..1 how strongly the shape grabs the patch it sits on: vertices stop where the colour changes and the shape turns along the contour; default 0
+aspect = [0.1, 1.0]              # short axis over long axis, single value or range picked per shape; 0.1 gives thin flakes along the rotation; default 1
+overlap = false                  # false keeps every shape off the space earlier shapes of the same layer already cover, so they tile; default true
+soft = [10, 40]                  # edge width in px over which the shape fades into its surroundings, single value or range; default 0 for crisp edges
+jitter = 0.03                    # colour mutation step; default 0.05
+contrast = 1.0                   # as for strokes; default 1.0
+saturation = 1.0                 # as for strokes; default 1.0
+value = 1.0                      # as for strokes; default 1.0
+palette = []                     # as for strokes
+opacity = 1.0                    # default 1.0
+fill = { style = "hatch", spacing = [3, 6], width = 1.2, angle = [30, 60], cross = true }   # default solid, see Shapes
 
 [regions.face]
 centre = [512, 380]
@@ -85,22 +104,41 @@ stroke = "bold"                  # name, or inline { radius = [..], length = [..
 count = 400
 region = "face"                  # optional
 placement = "error"              # "error" | "edges" | "random"; default "error"
-reference = { blur = 12, smooth = 6, edges = 2.0, levels = 6, contrast = 1.2, saturation = 1.3 }   # optional target tweaks, see below
+reference = { blur = 12, smooth = 6, edges = 2.0, levels = 6, contrast = 1.2, saturation = 1.3, gamma = 1.0 }   # optional target tweaks, see below
 accident = 0.0                   # chance to keep a stroke that does not lower the error, for deliberate marks; default 0
 skip = false                     # true leaves the layer out of the painting; default false
 candidates = 8                   # optional per-layer override
 refinements = 1                  # optional per-layer override
 stroke_radius = [5, 12]          # any stroke key prefixed with stroke_ overrides that key of the layer's stroke
 region_weight = 5.0              # likewise region_ for the layer's region
+
+[[layers]]
+name = "tiles"
+shape = "tile"                   # name, or inline { points = .., radius = [..] }; replaces brush and stroke
+count = 1200
+shape_fill = { style = "dots", spacing = 4, radius = 1.2 }   # shape_ overrides work the same way
 ```
 
-Each layer is painted on its own transparent layer over everything below, so a painting is built from coarse to fine. A layer's `reference` table changes what it is judged against: `blur` softens the target so broad strokes are scored on masses rather than detail they cannot paint, and stroke colours are sampled from the softened target too; `edges` multiplies the error along contours by one plus that factor so detail layers concentrate on getting edges right. `smooth` runs an edge-preserving filter with that spatial sigma in pixels, which flattens shading and noise inside a surface while keeping real boundaries sharp, the basis of a clean stylised look; `levels` posterises the target into that many tones per channel, and `contrast` and `saturation` scale it around mid grey, for flat, clearly separated planes in a stylised look; blur is applied first, so a small blur before posterising gives clean regions with crisp boundaries. All default to leaving the reference untouched. Stroke colour is sampled from the reference under the stroke and mutated by `jitter` in value and saturation, with a small hue drift. `follow` makes a stroke trace the reference's contours: its direction starts near the local contour tangent and is pulled back toward it at every step along its length, so strokes curve around shapes, with the pull scaled by the value and the local edge strength; flat areas stay random. With `aim` set, the contour field is replaced by straight lines through that point, so strokes lead the eye toward a focus. `placement` decides where strokes start: where the painting is still worst, along edges in the reference, or anywhere.
+Each layer is painted on its own transparent layer over everything below, so a painting is built from coarse to fine. A layer's `reference` table changes what it is judged against: `blur` softens the target so broad strokes are scored on masses rather than detail they cannot paint, and stroke colours are sampled from the softened target too; `edges` multiplies the error along contours by one plus that factor so detail layers concentrate on getting edges right. `smooth` runs an edge-preserving filter with that spatial sigma in pixels, which flattens shading and noise inside a surface while keeping real boundaries sharp, the basis of a clean stylised look; `levels` posterises the target into that many tones per channel, `contrast` and `saturation` scale it around mid grey, for flat, clearly separated planes in a stylised look, and `gamma` above 1 lifts the midtones so a dark subject can be drawn lighter than life, as an etcher would, while below 1 deepens them; blur is applied first, so a small blur before posterising gives clean regions with crisp boundaries. All default to leaving the reference untouched. Stroke colour is sampled from the reference under the stroke, or drawn from the stroke's `palette` when one is given, then scaled by the stroke's `saturation`, `value` and `contrast`, and mutated by `jitter` in value and saturation, with a small hue drift. A layer's `reference = { saturation = 0 }` is different: it makes the layer judge the painting against a grey target, so the whole result turns monochrome, while a stroke's own `saturation` only changes the palette of its marks. `follow` makes a stroke trace the reference's contours: its direction starts near the local contour tangent and is pulled back toward it at every step along its length, so strokes curve around shapes, with the pull scaled by the value and the local edge strength; flat areas stay random. With `aim` set, the contour field is replaced by straight lines through that point, so strokes lead the eye toward a focus. `placement` decides where strokes start: where the painting is still worst, along edges in the reference, or anywhere.
 
-Unknown keys and names are errors, and all problems in a file are reported at once. See `examples/quick.toml` for the smallest useful painting, `examples/oil_portrait.toml` for a four-layer oil painting, `examples/digital.toml` for a smooth hyper-realistic digital look, `examples/painterly.toml` and `examples/painterly_portrait.toml` for expressive strokes around a refined face, `examples/stylised.toml` for smooth planes with crisp edges, and `examples/focus.toml` for a refined focus surrounded by rigid marks leading toward it. Configs with a `face` region expect the face near the middle of a 1024px portrait; move the region for other framings.
+Unknown keys and names are errors, and all problems in a file are reported at once. See `examples/quick.toml` for the smallest useful painting, `examples/oil_portrait.toml` for a four-layer oil painting, `examples/digital.toml` for a smooth hyper-realistic digital look, `examples/painterly.toml` and `examples/painterly_portrait.toml` for expressive strokes around a refined face, `examples/stylised.toml` for smooth planes with crisp edges, `examples/focus.toml` for a refined focus surrounded by rigid marks leading toward it, `examples/mosaic.toml` for polygons with every fill style over a knife ground, `examples/pencil.toml` for an etching in ink on paper: drawn contours, hatch families that follow the form and cross-hatched shadows, `examples/pencil2.toml` for the same drawing in white chalk on black paper, which suits dark images with a lit subject, and `examples/watercolour.toml` for soft invented-palette washes and splatter around a digitally painted figure. Configs with a `face` region expect the face near the middle of a 1024px portrait; move the region for other framings.
 
 ## How a stroke is chosen
 
 Candidates are scored with a fast flat ribbon of the stroke's colour and width, not the full brush. Only the winner is painted for real, and it is kept only if the real render lowers the error, otherwise the layer is rolled back. Brushes whose marks differ a lot from a flat ribbon, such as hairs with strong `shade` or scattered knife patches, get more of these rejections; the layer summary prints the count. A brush preset can steer the ribbon with an optional `[proxy]` table (`opacity`, `width`).
+
+## Shapes
+
+A shape layer places polygons instead of strokes. Each candidate is a polygon with `points` vertices around a circle of a random `radius` from the range, at a random rotation. `radius` bounds the whole shape, not its sides: with `irregular` at zero the vertices sit evenly on that circle, and as it rises each vertex drifts toward its own random angle and pulls in toward the centre by its own random amount, so shapes become lopsided and spiky. `aspect` squashes the whole shape across its rotation, so low values give thin slivers and flakes that lie along the contour when the shape follows one. With `follow` above zero a shape grabs the patch it sits on: each vertex reaches out from the centre only until the target's colour departs from the colour under the centre, so the polygon fills the surface of one tone and stops at the next, whether the boundary is a hard edge or a soft gradient, and its rotation, which hatching follows by default, turns along the local contour; both effects scale with the value, so a shape at 0.5 is halfway between its random outline and the patch. Colour is sampled from the reference around the centre, then `saturation`, `value`, `contrast` and `jitter` apply as for strokes. The search mutates position, rotation, radius, one vertex, colour and the vertex count within the range. `soft` widens the edge from crisp to a fade over that many pixels, which turns a solid shape into a watercolour wash. With `overlap = false` a shape is clipped to whatever its own layer has not painted yet, in the search and on the canvas alike, so shapes tile around each other like cut paper; other layers are ignored. The polygon is rasterised directly, so the search scores exactly what gets painted and shape layers never reject a stroke after painting.
+
+`fill` chooses how the polygon is painted; every style has its own keys, and each numeric key takes a single value or a `[min, max]` range from which every shape draws its own value.
+
+| style | keys |
+|---|---|
+| `solid` | none; the default |
+| `hatch` | `spacing` between lines in px; `width` of a line, default 1; `angle` in degrees the lines run along, by default the polygon's own rotation; `cross = true` adds the perpendicular set |
+| `dots` | `spacing` of the dot grid in px; `radius` of a dot, default 1 |
+| `outline` | `width` of the edge line, default 1 |
 
 ## Brushes
 
@@ -156,7 +194,8 @@ Presets in `brushes/` follow the physics of each tool:
 ## Features
 
 - Greedy per-stroke search with mutation, exact incremental error over the stroke's bounds
-- Layers assigned a brush and a stroke type, with named reusable definitions
+- Layers assigned a brush and a stroke type, or a polygon shape type, with named reusable definitions and per-layer key overrides
+- Polygons with a vertex count range, radius range and irregularity, filled solid, hatched, dotted or outlined
 - Strokes follow cubic Bézier curves with a pressure profile that eases in and out like a hand
 - Strokes rendered by libmypaint with a bristle and paint-load model on top
 - Brushes defined in TOML: engine settings, input dynamics, bristles or a vector stamp, paint

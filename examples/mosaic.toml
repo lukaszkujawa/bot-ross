@@ -1,0 +1,45 @@
+[search]
+candidates = 10
+refinements = 3
+
+[brushes]
+knife = { file = "../brushes/knife.toml" }
+
+[shapes]
+tile = { points = [4, 6], radius = [12, 40], irregular = 0.25, jitter = 0.03 }
+weave = { points = [3, 5], radius = [8, 24], irregular = 0.4, fill = { style = "hatch", spacing = 4, width = 1.2, cross = true }, opacity = 0.9 }
+grain = { points = 6, radius = [6, 16], fill = { style = "dots", spacing = 4, radius = 1.2 } }
+rim = { points = [3, 7], radius = [10, 30], irregular = 0.5, fill = { style = "outline", width = 1.5 }, contrast = 1.6 }
+
+[[layers]]
+name = "ground"
+brush = "knife"
+stroke = { radius = [30, 60], length = [150, 400], bend = [0.0, 0.2], pressure = "flat" }
+count = 150
+reference = { blur = 10 }
+
+[[layers]]
+name = "tiles"
+shape = "tile"
+count = 1200
+reference = { smooth = 4 }
+
+[[layers]]
+name = "weave"
+shape = "weave"
+count = 800
+reference = { smooth = 3, edges = 1.5 }
+
+[[layers]]
+name = "grain"
+shape = "grain"
+count = 600
+placement = "edges"
+
+[[layers]]
+name = "rims"
+shape = "rim"
+count = 300
+placement = "edges"
+reference = { edges = 3.0 }
+accident = 0.1

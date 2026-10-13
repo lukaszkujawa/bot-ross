@@ -34,7 +34,7 @@ fn unknown_setting_is_rejected_when_building() {
 
 #[test]
 fn shipped_presets_load() {
-    let presets: Vec<_> = std::fs::read_dir("brushes").unwrap().map(|entry| entry.unwrap().path()).collect();
+    let presets: Vec<_> = std::fs::read_dir("brushes").unwrap().map(|entry| entry.unwrap().path()).filter(|path| path.extension().is_some_and(|ext| ext == "toml")).collect();
     assert_eq!(presets.len(), 9);
     for preset in presets {
         let brush = Brush::load(&preset).unwrap();

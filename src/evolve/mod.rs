@@ -1,14 +1,17 @@
+pub mod family;
 pub mod progress;
 pub mod search;
+pub mod shapes;
+pub mod strokes;
 
-use crate::brush::Brush;
+use crate::bounds::Bounds;
 use crate::canvas::Canvas;
+use crate::evolve::family::Family;
 use crate::evolve::progress::Progress;
 use crate::evolve::search::Search;
 use crate::fitness::Fitness;
-use crate::flow::Flow;
-use crate::bounds::Bounds;
-use crate::painting::config::{PlacementMode, SearchConfig};
+use crate::layer::Layer;
+use crate::painting::config::PlacementMode;
 use crate::painting::plan::LayerPlan;
 use crate::placement::Placement;
 use crate::reference::Reference;
@@ -17,7 +20,6 @@ use std::error::Error;
 use std::time::Instant;
 
 const CELL: usize = 32;
-const MARGIN_RADII: f32 = 2.0;
 
 #[derive(Debug, Default, PartialEq)]
 pub struct Outcome {
@@ -27,8 +29,15 @@ pub struct Outcome {
     pub error: u64,
 }
 
-pub fn run_layer(plan: &LayerPlan, search: SearchConfig, canvas: &mut Canvas, reference: &Reference, progress: &mut Progress, rng: &mut impl Rng) -> Result<Outcome, Box<dyn Error>> {
-    let mut brush = Brush::load(&plan.brush)?;
+pub fn run_layer<F: Family>(
+    plan: &LayerPlan,
+    family: &F,
+    mut paint: impl FnMut(&mut Layer, &F::Candidate) -> Bounds,
+    canvas: &mut Canvas,
+    reference: &Reference,
+    progress: &mut Progress,
+    rng: &mut impl Rng,
+) -> Result<Outcome, Box<dyn Error>> {
     let (width, height) = (canvas.width, canvas.height);
     let target = plan.reference.prepare(reference);
     let mut fitness = Fitness::new(&target, canvas.composite());
@@ -41,27 +50,21 @@ pub fn run_layer(plan: &LayerPlan, search: SearchConfig, canvas: &mut Canvas, re
         });
     }
     let mut placement = Placement::new(&fitness, plan.placement, edges, CELL);
-    let flow = match plan.stroke.aim {
-        Some(centre) => Flow::radial(width, height, centre),
-        None if plan.stroke.follow > 0.0 => Flow::of(reference),
-        None => Flow::flat(width, height),
-    };
-    let searcher = Search { kind: &plan.stroke, flow: &flow, proxy: brush.proxy(), candidates: plan.candidates.max(1), refinements: plan.refinements };
+    let searcher = Search { family, candidates: plan.candidates.max(1), refinements: plan.refinements };
     let layer = canvas.add_layer();
     let mut outcome = Outcome::default();
     let started = Instant::now();
-    while outcome.placed < plan.count && outcome.attempts < plan.count * search.patience.max(1) && !progress.stopped {
+    while outcome.placed < plan.count && outcome.attempts < plan.count * plan.patience.max(1) && !progress.stopped {
         outcome.attempts += 1;
-        let (stroke, delta) = searcher.run(placement.pick(rng), &fitness, &target, rng);
+        let (candidate, delta) = searcher.run(placement.pick(rng), &fitness, &target, rng);
         let forgiven = plan.accident > 0.0 && rng.random_range(0.0..1.0) < plan.accident;
         if delta >= 0 && !forgiven {
             continue;
         }
-        let [xs, ys] = stroke.path.extent();
-        let margin = Bounds::enclosing(xs, ys, stroke.radius * MARGIN_RADII + 4.0, width, height);
+        let margin = family.reach(&candidate, width, height);
         let snapshot = layer.read_region(margin);
         let before = fitness.total();
-        let touched = brush.paint(layer, &stroke).union(margin);
+        let touched = paint(layer, &candidate).union(margin);
         fitness.refresh(layer, touched);
         if fitness.total() >= before && !forgiven {
             layer.write_region(margin, &snapshot);

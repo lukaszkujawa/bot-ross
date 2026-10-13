@@ -35,7 +35,7 @@ impl Reference {
         Self::from_pixels(self.width, self.height, rgb)
     }
 
-    pub fn graded(&self, contrast: f32, saturation: f32, levels: u8) -> Self {
+    pub fn graded(&self, contrast: f32, saturation: f32, gamma: f32, levels: u8) -> Self {
         let unit = OPAQUE as f32;
         let rgb = self
             .rgb
@@ -46,7 +46,8 @@ impl Reference {
                 rgb.map(|c| {
                     let saturated = grey + (c - grey) * saturation;
                     let contrasted = 0.5 + (saturated - 0.5) * contrast;
-                    let stepped = if levels >= 2 { (contrasted * (levels - 1) as f32).round() / (levels - 1) as f32 } else { contrasted };
+                    let lifted = contrasted.clamp(0.0, 1.0).powf(1.0 / gamma);
+                    let stepped = if levels >= 2 { (lifted * (levels - 1) as f32).round() / (levels - 1) as f32 } else { lifted };
                     (stepped.clamp(0.0, 1.0) * unit).round() as u16
                 })
             })

@@ -1,4 +1,4 @@
-use crate::color::Hsv;
+use crate::color::{Hsv, Swatch, pick_swatch};
 use crate::flow::Flow;
 use crate::reference::Reference;
 use crate::stroke::{Curve, Point, Pressure, Stroke};
@@ -8,7 +8,6 @@ use std::f32::consts::{PI, TAU};
 
 const TURN: f32 = TAU / 24.0;
 const TRACE_STEPS: usize = 12;
-const HUE_SHARE: f32 = 0.15;
 const STRETCH: [f32; 2] = [0.8, 1.25];
 const SHIFT: f32 = 0.5;
 const REBEND: f32 = 0.25;
@@ -26,6 +25,12 @@ pub struct StrokeType {
     pub jitter: f32,
     #[serde(default = "one")]
     pub contrast: f32,
+    #[serde(default = "one")]
+    pub saturation: f32,
+    #[serde(default = "one")]
+    pub value: f32,
+    #[serde(default)]
+    pub palette: Vec<Swatch>,
     #[serde(default)]
     pub follow: f32,
     #[serde(default = "one")]
@@ -80,8 +85,13 @@ impl StrokeType {
                 problems.push(format!("{label}: {key} must be between 0 and 1"));
             }
         }
-        if self.contrast < 0.0 {
-            problems.push(format!("{label}: contrast must not be negative"));
+        if !(self.opacity > 0.0 && self.opacity <= 1.0) {
+            problems.push(format!("{label}: opacity must be greater than 0 and at most 1"));
+        }
+        for (key, value) in [("contrast", self.contrast), ("saturation", self.saturation), ("value", self.value)] {
+            if value < 0.0 {
+                problems.push(format!("{label}: {key} must not be negative"));
+            }
         }
         problems
     }
@@ -101,7 +111,8 @@ impl StrokeType {
             let bend = pick(self.bend) * length * (1.0 - attraction) * if pick([0.0, 1.0]) < 0.5 { -1.0 } else { 1.0 };
             *control = Point { x: control.x + nx * bend, y: control.y + ny * bend };
         }
-        let color = self.jittered(Hsv::from_rgb(reference.mean_along(&path)).contrasted(self.contrast), &mut pick);
+        let base = pick_swatch(&self.palette, &mut pick).unwrap_or_else(|| Hsv::from_rgb(reference.mean_along(&path)));
+        let color = base.saturated(self.saturation).dimmed(self.value).contrasted(self.contrast).jittered(self.jitter, &mut pick);
         Stroke { path, pressure: self.pressure.profile(), color, radius, opacity: self.opacity, seed: rng.random() }
     }
 
@@ -149,19 +160,10 @@ impl StrokeType {
                 *control = Point { x: control.x + nx * offset, y: control.y + ny * offset };
             }
             4 => mutant.radius = (stroke.radius * pick(STRETCH)).clamp(self.radius[0], self.radius[1]),
-            5 => mutant.color = self.jittered(stroke.color, &mut pick),
+            5 => mutant.color = stroke.color.jittered(self.jitter, &mut pick),
             _ => mutant.seed = seed,
         }
         mutant
-    }
-
-    fn jittered(&self, color: Hsv, pick: &mut impl FnMut([f32; 2]) -> f32) -> Hsv {
-        let jitter = [-self.jitter, self.jitter];
-        Hsv {
-            hue: (color.hue + pick(jitter) * HUE_SHARE).rem_euclid(1.0),
-            saturation: (color.saturation + pick(jitter)).clamp(0.0, 1.0),
-            value: (color.value + pick(jitter)).clamp(0.0, 1.0),
-        }
     }
 }
 

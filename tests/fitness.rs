@@ -43,7 +43,7 @@ fn delta_matches_a_full_recompute_after_painting_the_mark() {
     let before = fitness.total();
     let mark = ribbon(&stroke(), Proxy::default(), SIZE, SIZE);
     let rgb = stroke().color.to_rgb();
-    let delta = fitness.delta(&mark, rgb);
+    let delta = fitness.delta(&mark);
     assert!(delta != 0);
     layer.blend(mark.bounds(), |x, y| Premultiplied::from_rgb(rgb, mark.coverage_at(x, y)));
     fitness.refresh(&layer, mark.bounds());
@@ -74,5 +74,5 @@ fn matching_composite_has_zero_error_and_weights_scale_it() {
 fn empty_mark_has_zero_delta() {
     let fitness = Fitness::new(&reference(), vec![Premultiplied::WHITE; SIZE * SIZE]);
     let mark = Mark::new(Bounds::around(10.0, 10.0, 5.0, SIZE, SIZE));
-    assert_eq!(fitness.delta(&mark, [1.0, 0.0, 0.0]), 0);
+    assert_eq!(fitness.delta(&mark), 0);
 }

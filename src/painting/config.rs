@@ -1,3 +1,4 @@
+use crate::painting::shape_type::ShapeType;
 use crate::painting::stroke_type::StrokeType;
 use crate::reference::Reference;
 use serde::{Deserialize, Serialize};
@@ -7,12 +8,13 @@ use std::path::PathBuf;
 
 #[derive(Debug, Default, Deserialize)]
 #[serde(deny_unknown_fields, default)]
-pub struct Painting {
+pub struct PaintingConfig {
     pub canvas: CanvasConfig,
     pub search: SearchConfig,
     pub output: OutputConfig,
     pub brushes: BTreeMap<String, BrushRef>,
     pub strokes: BTreeMap<String, StrokeType>,
+    pub shapes: BTreeMap<String, ShapeType>,
     pub regions: BTreeMap<String, Region>,
     pub layers: Vec<LayerConfig>,
 }
@@ -114,17 +116,18 @@ pub struct Target {
     pub levels: u8,
     pub contrast: f32,
     pub saturation: f32,
+    pub gamma: f32,
 }
 
 impl Default for Target {
     fn default() -> Self {
-        Self { blur: 0.0, smooth: 0.0, edges: 0.0, levels: 0, contrast: 1.0, saturation: 1.0 }
+        Self { blur: 0.0, smooth: 0.0, edges: 0.0, levels: 0, contrast: 1.0, saturation: 1.0, gamma: 1.0 }
     }
 }
 
 impl Target {
     pub fn grades(&self) -> bool {
-        self.levels >= 2 || self.contrast != 1.0 || self.saturation != 1.0
+        self.levels >= 2 || self.contrast != 1.0 || self.saturation != 1.0 || self.gamma != 1.0
     }
 
     pub fn prepare<'a>(&self, reference: &'a Reference) -> Cow<'a, Reference> {
@@ -136,7 +139,7 @@ impl Target {
             target = Cow::Owned(target.smoothed(self.smooth));
         }
         if self.grades() {
-            target = Cow::Owned(target.graded(self.contrast, self.saturation, self.levels));
+            target = Cow::Owned(target.graded(self.contrast, self.saturation, self.gamma, self.levels));
         }
         target
     }
@@ -145,8 +148,9 @@ impl Target {
 #[derive(Debug, Clone, Deserialize)]
 pub struct LayerConfig {
     pub name: String,
-    pub brush: Named<BrushRef>,
-    pub stroke: Named<StrokeType>,
+    pub brush: Option<Named<BrushRef>>,
+    pub stroke: Option<Named<StrokeType>>,
+    pub shape: Option<Named<ShapeType>>,
     pub count: usize,
     pub region: Option<Named<Region>>,
     #[serde(default)]

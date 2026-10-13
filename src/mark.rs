@@ -1,5 +1,5 @@
 use crate::bounds::Bounds;
-use crate::color::Premultiplied;
+use crate::color::{OPAQUE, Premultiplied};
 use crate::layer::Layer;
 
 pub struct Mark {
@@ -27,8 +27,27 @@ impl Mark {
         }
     }
 
+    pub fn clip(&mut self, mut occupied: impl FnMut(usize, usize) -> f32) {
+        for y in self.bounds.top..self.bounds.bottom {
+            for x in self.bounds.left..self.bounds.right {
+                let index = self.index(x, y);
+                self.coverage[index] *= 1.0 - occupied(x, y);
+            }
+        }
+    }
+
+    pub fn clip_to(&mut self, layer: &Layer) {
+        let mut coverage = std::mem::take(&mut self.coverage);
+        layer.read(self.bounds, |x, y, pixel| coverage[self.index(x, y)] *= 1.0 - pixel.alpha as f32 / OPAQUE as f32);
+        self.coverage = coverage;
+    }
+
     pub fn bounds(&self) -> Bounds {
         self.bounds
+    }
+
+    pub fn rgb_at(&self, x: usize, y: usize) -> [f32; 3] {
+        self.rgb[self.index(x, y)]
     }
 
     pub fn coverage_at(&self, x: usize, y: usize) -> f32 {

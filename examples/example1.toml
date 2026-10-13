@@ -1,0 +1,75 @@
+[search]
+candidates = 6
+refinements = 2
+
+
+[brushes]
+air = { file = "../brushes/airbrush.toml" }
+round = { file = "../brushes/soft_round.toml" }
+pen = { file = "../brushes/pen.toml" }
+liner = { file = "../brushes/liner.toml" }
+
+[strokes]
+hairline = { 
+	radius = [0.8, 1.2], 
+	length = [100, 1000], 
+	bend = [0.0, 0.1], 
+	pressure = "hand", 
+	jitter = 0.0,
+	aim = [384, 512],
+	follow = 0.1
+}
+
+wash = { 
+	radius = [ 60,120], 
+	length = [ 100,400], 
+	pressure = "flat", 
+	jitter = 0.02 
+}
+
+[regions]
+face = { centre = [384, 750], radius = 250, weight = 4.0, outside = 0.25, feather = 0.5 }
+
+[[layers]]
+name = "ground"
+brush = "liner"
+stroke = "hairline"
+count = 2000
+accident = 0.3
+
+[[layers]]
+name = "face"
+count = 3000
+
+brush = "liner"
+region = "face"
+stroke = "hairline"
+stroke_length = [5, 300]
+stroke_radius = [0.1, 0.3]
+accident = 0.1
+
+[[layers]]
+name = "details"
+brush = "liner"
+stroke = { radius = [0.1, 0.4], aim = [384, 512], length = [8, 60], bend = [0.0, 0.15], pressure = "flat", jitter = 0.0, follow = 0.7 }
+count = 1200
+region = { centre = [380, 500], radius = 200, weight = 6.0, outside = 0.1, feather = 0.4 }
+placement = "edges"
+reference = { smooth = 2, edges = 14.0 }
+candidates = 10
+refinements = 3
+accident = 0.1
+
+[[layers]]
+name = "details 2"
+count = 4000
+
+brush = "liner"
+stroke = { radius = [0.1, 0.1], contrast = 1.8, length = [4, 60], bend = [0.0, 0.15], pressure = "flat", jitter = 0.0, follow = 1 }
+
+region = { centre = [380, 750], radius = 300, weight = 6.0, outside = 0.1, feather = 0.4 }
+placement = "edges"
+reference = { edges = 14.0 }
+candidates = 12
+refinements = 3
+accident = 0.05

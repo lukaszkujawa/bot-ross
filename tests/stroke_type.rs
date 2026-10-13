@@ -1,3 +1,4 @@
+use bot_ross::color::Swatch;
 use bot_ross::flow::Flow;
 use bot_ross::painting::stroke_type::{PressureShape, StrokeType};
 use bot_ross::reference::Reference;
@@ -6,7 +7,7 @@ use rand::SeedableRng;
 use rand::rngs::StdRng;
 
 fn kind() -> StrokeType {
-    StrokeType { radius: [4.0, 9.0], length: [20.0, 80.0], bend: [0.0, 0.3], pressure: PressureShape::Hand, jitter: 0.1, contrast: 1.0, follow: 0.0, opacity: 1.0, aim: None }
+    StrokeType { radius: [4.0, 9.0], length: [20.0, 80.0], bend: [0.0, 0.3], pressure: PressureShape::Hand, jitter: 0.1, contrast: 1.0, saturation: 1.0, value: 1.0, palette: vec![], follow: 0.0, opacity: 1.0, aim: None }
 }
 
 fn reference() -> Reference {
@@ -52,6 +53,41 @@ fn contrast_spreads_or_flattens_stroke_lightness() {
     assert_eq!((sample(0.0, 191), sample(0.0, 40)), (0.5, 0.5));
     assert_eq!((sample(2.0, 220), sample(2.0, 40)), (1.0, 0.0));
     assert!(sample(1.5, 191) > 0.8 && sample(1.5, 40) < 0.15);
+}
+
+#[test]
+fn saturation_scales_stroke_colour_toward_grey() {
+    let reference = Reference::from_rgb8(50, 50, &[200, 40, 40].repeat(2500));
+    let sample = |saturation: f32| {
+        let kind = StrokeType { jitter: 0.0, saturation, ..kind() };
+        kind.random(Point { x: 25.0, y: 25.0 }, &reference, &Flow::flat(50, 50), &mut StdRng::seed_from_u64(1)).color.saturation
+    };
+    assert_eq!(sample(0.0), 0.0);
+    assert!((sample(0.5) - 0.4).abs() < 0.01);
+    assert_eq!(sample(2.0), 1.0);
+}
+
+#[test]
+fn value_scales_stroke_lightness_so_zero_is_ink() {
+    let reference = Reference::from_rgb8(50, 50, &[200, 150, 100].repeat(2500));
+    let sample = |value: f32| {
+        let kind = StrokeType { jitter: 0.0, value, ..kind() };
+        kind.random(Point { x: 25.0, y: 25.0 }, &reference, &Flow::flat(50, 50), &mut StdRng::seed_from_u64(1)).color
+    };
+    assert_eq!(sample(0.0).to_rgb(), [0.0, 0.0, 0.0]);
+    assert!((sample(0.5).value - 0.39).abs() < 0.01);
+    assert_eq!(sample(2.0).value, 1.0);
+}
+
+#[test]
+fn palette_replaces_the_sampled_colour() {
+    let swatch = |hex: &str| Swatch::try_from(hex.to_string()).unwrap();
+    let kind = StrokeType { jitter: 0.0, palette: vec![swatch("#0000ff"), swatch("#ff0000")], ..kind() };
+    let mut rng = StdRng::seed_from_u64(2);
+    let hues: std::collections::BTreeSet<u32> = (0..40).map(|_| (kind.random(Point { x: 50.0, y: 50.0 }, &reference(), &Flow::flat(200, 200), &mut rng).color.hue * 1000.0) as u32).collect();
+    assert_eq!(hues, [0, 666].into_iter().collect());
+    assert!(Swatch::try_from("#12345".to_string()).unwrap_err().contains("#rrggbb"));
+    assert_eq!(String::from(swatch("#1a2b3c")), "#1a2b3c");
 }
 
 #[test]

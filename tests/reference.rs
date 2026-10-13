@@ -59,15 +59,18 @@ fn blur_softens_a_step_edge_and_keeps_flat_areas() {
 #[test]
 fn grading_posterises_pushes_contrast_and_drains_colour() {
     let reference = Reference::from_rgb8(2, 1, &[64, 128, 192, 200, 100, 50]);
-    let flat = reference.graded(1.0, 1.0, 2);
+    let flat = reference.graded(1.0, 1.0, 1.0, 2);
     assert_eq!(flat.pixel(0, 0), [0, 32768, 32768]);
-    let grey = reference.graded(1.0, 0.0, 0);
+    let grey = reference.graded(1.0, 0.0, 1.0, 0);
     let [r, g, b] = grey.pixel(1, 0);
     assert!(r == g && g == b, "{:?}", grey.pixel(1, 0));
-    let punchy = reference.graded(2.0, 1.0, 0);
+    let punchy = reference.graded(2.0, 1.0, 1.0, 0);
     assert!(punchy.pixel(0, 0)[0] < 100);
     assert!(punchy.pixel(0, 0)[2] > reference.pixel(0, 0)[2]);
-    assert_eq!(reference.graded(1.0, 1.0, 0).pixel(0, 0), reference.pixel(0, 0));
+    assert_eq!(reference.graded(1.0, 1.0, 1.0, 0).pixel(0, 0), reference.pixel(0, 0));
+    let lifted = reference.graded(1.0, 1.0, 2.0, 0).pixel(0, 0);
+    assert!(lifted[0] > reference.pixel(0, 0)[0] && lifted[0] == ((64.0f32 / 255.0).sqrt() * 32768.0).round() as u16, "{lifted:?}");
+    assert!(reference.graded(1.0, 1.0, 0.5, 0).pixel(0, 0)[0] < reference.pixel(0, 0)[0]);
 }
 
 #[test]

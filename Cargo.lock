@@ -211,6 +211,7 @@ dependencies = [
  "minifb",
  "pkg-config",
  "rand 0.10.3",
+ "rayon",
  "resvg",
  "serde",
  "toml",

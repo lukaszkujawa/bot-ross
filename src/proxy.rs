@@ -3,7 +3,7 @@ use crate::layer::tiles::Bounds;
 use crate::stroke::Stroke;
 use serde::Deserialize;
 
-const STEPS_PER_RADIUS: f32 = 4.0;
+const STEPS_PER_RADIUS: f32 = 2.0;
 
 #[derive(Clone, Copy, Debug, Deserialize, PartialEq)]
 #[serde(default)]

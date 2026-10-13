@@ -3,7 +3,7 @@ name = "Dry brush"
 [settings]
 hardness = 1.0
 anti_aliasing = 0.5
-dabs_per_actual_radius = 4.0
+dabs_per_actual_radius = 2.5
 radius_by_random = 0.3
 offset_by_random = 0.3
 opaque_linearize = 0.0

@@ -8,9 +8,14 @@ clap = { version = "4", features = ["derive"] }
 image = "0.25"
 minifb = "0.29"
 rand = "0.10"
+rayon = "1"
 resvg = "0.48"
 serde = { version = "1", features = ["derive"] }
 toml = "1"
 
 [build-dependencies]
 pkg-config = "0.3"
+
+[profile.release]
+lto = "fat"
+codegen-units = 1

@@ -1,0 +1,33 @@
+name = "Wet oil"
+
+[settings]
+hardness = 0.7
+anti_aliasing = 0.8
+dabs_per_actual_radius = 3.0
+opaque_linearize = 0.9
+smudge = 0.15
+smudge_length = 0.25
+smudge_radius_log = 0.2
+
+[dynamics]
+radius_logarithmic = { pressure = [[0.0, -0.5], [1.0, 0.15]] }
+opaque_multiply = { pressure = [[0.0, 0.0], [0.3, 1.0], [1.0, 1.0]] }
+
+[bristles]
+density = 2.0
+splay = 0.4
+spread = 1.0
+thickness = [0.03, 0.08]
+tip = 1.0
+taper = [0.08, 0.3]
+ripple = 0.5
+opacity = [0.85, 1.0]
+shade = 0.08
+wobble = 0.15
+onset = [0.0, 0.04]
+reach = [0.85, 1.0]
+
+[paint]
+load = 1.0
+depletion = 0.1
+unevenness = 0.1

@@ -1,0 +1,19 @@
+name = "Palette knife"
+
+[stamp]
+tip = "../brush_tips/knife.svg"
+spacing = 0.05
+ripple = 0.08
+wobble = 0.03
+streaks = 0.4
+smear = 0.5
+
+[paint]
+load = 1.0
+depletion = 0.4
+unevenness = 0.4
+skip = 0.3
+grain = 2.2
+
+[proxy]
+opacity = 0.75

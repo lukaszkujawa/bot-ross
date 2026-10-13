@@ -1,0 +1,46 @@
+[search]
+candidates = 16
+refinements = 3
+
+[brushes]
+oil = { file = "../brushes/wet_oil.toml" }
+knife = { file = "../brushes/knife.toml" }
+dry = { file = "../brushes/dry_brush.toml" }
+pen = { file = "../brushes/pen.toml" }
+
+[strokes]
+sweep = { radius = [30, 60], length = [150, 400], bend = [0.1, 0.4] }
+block = { radius = [12, 28], length = [60, 200], bend = [0.0, 0.2], pressure = "flat" }
+detail = { radius = [3, 7], length = [15, 70], pressure = "fading" }
+fine = { radius = [1, 2], length = [8, 30], bend = [0.0, 0.1], pressure = "flat" }
+
+[regions]
+face = { centre = [380, 560], radius = 300, weight = 3.0 }
+features = { centre = [380, 520], radius = 160, weight = 5.0 }
+
+[[layers]]
+name = "underpainting"
+brush = "oil"
+stroke = "sweep"
+count = 300
+
+[[layers]]
+name = "blocking"
+brush = "knife"
+stroke = "block"
+count = 900
+
+[[layers]]
+name = "form"
+brush = "dry"
+stroke = "detail"
+count = 1500
+region = "face"
+
+[[layers]]
+name = "features"
+brush = "pen"
+stroke = "fine"
+count = 600
+placement = "edges"
+region = "features"

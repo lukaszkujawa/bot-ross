@@ -1,0 +1,26 @@
+name = "Soft round"
+
+[settings]
+hardness = 0.5
+anti_aliasing = 1.0
+dabs_per_actual_radius = 8.0
+opaque_multiply = 1.0
+opaque_linearize = 0.9
+smudge = 0.0
+
+[dynamics]
+opaque_multiply = { pressure = [] }
+
+[bristles]
+density = 1.0
+max = 1
+spread = 0.0
+thickness = [1.0, 1.0]
+opacity = [0.7, 0.7]
+shade = 0.0
+wobble = 0.0
+reach = [1.0, 1.0]
+
+[proxy]
+opacity = 0.7
+width = 0.85

@@ -1,0 +1,83 @@
+[search]
+candidates = 12
+refinements = 2
+
+[brushes]
+oil = { file = "../brushes/wet_oil.toml" }
+knife = { file = "../brushes/knife.toml" }
+dry = { file = "../brushes/dry_brush.toml" }
+air = { file = "../brushes/airbrush.toml" }
+round = { file = "../brushes/soft_round.toml" }
+pen = { file = "../brushes/pen.toml" }
+
+[strokes]
+sweep = { radius = [35, 80], length = [150, 450], bend = [0.0, 0.3], pressure = "flat", jitter = 0.04 }
+scumble = { radius = [25, 50], length = [120, 360], bend = [0.0, 0.3], pressure = "fading", jitter = 0.06 }
+stroke = { radius = [12, 30], length = [50, 180], bend = [0.0, 0.3], jitter = 0.04 }
+flick = { radius = [2, 4], length = [4, 14], bend = [0.0, 0.1], pressure = "flat", jitter = 0.15 }
+hair = { radius = [3, 8], length = [20, 80], bend = [0.0, 0.2], jitter = 0.02 }
+soft = { radius = [6, 16], length = [15, 60], bend = [0.0, 0.2], pressure = "flat", jitter = 0.02 }
+refine = { radius = [1.5, 5], length = [6, 30], bend = [0.0, 0.1], pressure = "flat", jitter = 0.0 }
+hairline = { radius = [0.6, 1.5], length = [4, 20], bend = [0.0, 0.1], pressure = "flat", jitter = 0.0 }
+
+[regions]
+frame = { centre = [384, 440], radius = 330, weight = 1.0, outside = 0.1, feather = 0.6 }
+face = { centre = [384, 440], radius = 260, weight = 4.0, outside = 0.3, feather = 0.6 }
+features = { centre = [384, 410], radius = 160, weight = 6.0, outside = 0.2, feather = 0.6 }
+
+[[layers]]
+name = "scumble"
+brush = "dry"
+stroke = "scumble"
+count = 600
+placement = "random"
+
+[[layers]]
+name = "sweeps"
+brush = "knife"
+stroke = "sweep"
+count = 150
+region = "frame"
+
+[[layers]]
+name = "strokes"
+brush = "oil"
+stroke = "stroke"
+count = 1000
+region = "frame"
+
+[[layers]]
+name = "hair"
+brush = "round"
+stroke = "hair"
+count = 1500
+region = "frame"
+
+[[layers]]
+name = "skin"
+brush = "air"
+stroke = "soft"
+count = 4000
+region = "face"
+
+[[layers]]
+name = "refine"
+brush = "round"
+stroke = "refine"
+count = 5000
+region = "features"
+
+[[layers]]
+name = "accents"
+brush = "pen"
+stroke = "hairline"
+count = 1500
+placement = "edges"
+region = "features"
+
+[[layers]]
+name = "flicks"
+brush = "dry"
+stroke = "flick"
+count = 400
+placement = "random"

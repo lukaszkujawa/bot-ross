@@ -1,0 +1,41 @@
+name = "Dry brush"
+
+[settings]
+hardness = 1.0
+anti_aliasing = 0.5
+dabs_per_actual_radius = 4.0
+radius_by_random = 0.3
+offset_by_random = 0.3
+opaque_linearize = 0.0
+smudge = 0.0
+
+[dynamics]
+radius_logarithmic = { pressure = [[0.0, -0.5], [1.0, 0.15]] }
+opaque = { random = [[0.0, -0.5], [1.0, 0.0]] }
+opaque_multiply = { pressure = [[0.0, 0.0], [0.3, 1.0], [1.0, 1.0]] }
+
+[bristles]
+density = 1.6
+splay = 0.5
+spread = 1.0
+thickness = [0.01, 0.04]
+tip = 0.5
+taper = [0.05, 0.6]
+ripple = 0.7
+opacity = [0.25, 0.9]
+shade = 0.15
+wobble = 0.25
+onset = [0.0, 0.05]
+reach = [0.5, 1.0]
+
+[paint]
+load = 1.0
+depletion = 0.6
+unevenness = 0.3
+skip = 0.3
+grain = 0.5
+fade = 0.45
+
+[proxy]
+opacity = 0.45
+width = 0.9

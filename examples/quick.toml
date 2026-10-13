@@ -1,0 +1,8 @@
+[brushes]
+oil = { file = "../brushes/wet_oil.toml" }
+
+[[layers]]
+name = "paint"
+brush = "oil"
+stroke = { radius = [8, 40], length = [40, 300] }
+count = 1000

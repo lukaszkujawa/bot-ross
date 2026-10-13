@@ -1,0 +1,27 @@
+name = "Calligraphy"
+
+[settings]
+hardness = 0.85
+anti_aliasing = 1.0
+dabs_per_actual_radius = 40.0
+elliptical_dab_ratio = 4.0
+elliptical_dab_angle = 45.0
+opaque_linearize = 0.9
+smudge = 0.0
+
+[dynamics]
+radius_logarithmic = { pressure = [[0.0, -1.2], [1.0, 0.3]] }
+opaque_multiply = { pressure = [[0.0, 0.0], [0.15, 1.0], [1.0, 1.0]] }
+
+[bristles]
+density = 1.0
+max = 1
+spread = 0.0
+thickness = [1.0, 1.0]
+opacity = [1.0, 1.0]
+shade = 0.0
+wobble = 0.0
+reach = [1.0, 1.0]
+
+[proxy]
+width = 0.7

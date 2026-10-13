@@ -44,7 +44,7 @@ impl Stamp {
             let pressure = stroke.pressure.at(progress);
             let remaining = paint.remaining(progress);
             let thickness = remaining * (1.0 - load.next(rng).abs()) * (0.5 + 0.5 * pressure);
-            let opacity = covered(thickness);
+            let opacity = covered(thickness) * stroke.opacity;
             let bare = paint.skip + (1.0 - remaining) * (1.0 - paint.skip);
             let across = stroke.radius * (1.0 + width.next(rng));
             let along = across * tip.aspect();

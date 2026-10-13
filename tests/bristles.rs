@@ -11,6 +11,7 @@ fn stroke() -> Stroke {
         pressure: Pressure::constant(1.0),
         color: Hsv { hue: 0.5, saturation: 0.5, value: 0.5 },
         radius: 10.0,
+        opacity: 1.0,
         seed: 7,
     }
 }
@@ -69,10 +70,10 @@ fn splay_narrows_hairs_under_light_pressure() {
 
 #[test]
 fn tapered_hair_starts_and_ends_at_tip_width() {
-    let bristles = Bristles { tip: 0.5, taper: [0.25, 0.25], thickness: [0.5, 0.5], ..bristles() };
+    let bristles = Bristles { tip: 0.8, taper: [0.25, 0.25], thickness: [0.5, 0.5], ..bristles() };
     let hair = &bristles.hairs(&stroke(), &Paint::default(), &mut StdRng::seed_from_u64(1))[0];
     let radii: Vec<f32> = hair.samples.iter().map(|sample| sample.radius).collect();
-    assert_eq!((radii[0], *radii.last().unwrap()), (0.5, 0.5));
+    assert_eq!((radii[0], *radii.last().unwrap()), (0.8, 0.8));
     assert_eq!(radii[radii.len() / 2], 5.0);
     assert!(radii[1] > radii[0] && radii[radii.len() - 2] > *radii.last().unwrap());
 }

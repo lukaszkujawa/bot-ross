@@ -4,6 +4,7 @@ pub mod cli;
 pub mod color;
 pub mod evolve;
 pub mod fitness;
+pub mod flow;
 pub mod image;
 pub mod layer;
 pub mod mypaint;

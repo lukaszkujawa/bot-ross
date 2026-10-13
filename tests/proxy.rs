@@ -8,6 +8,7 @@ fn stroke() -> Stroke {
         pressure: Pressure::constant(1.0),
         color: Hsv { hue: 0.0, saturation: 1.0, value: 1.0 },
         radius: 10.0,
+        opacity: 1.0,
         seed: 0,
     }
 }
@@ -39,4 +40,10 @@ fn light_pressure_narrows_the_ribbon_and_bounds_clamp_to_the_canvas() {
     let edge = Stroke { path: Curve::line(Point { x: -5.0, y: 2.0 }, Point { x: 30.0, y: 2.0 }), ..stroke() };
     let bounds = ribbon(&edge, Proxy::default(), 100, 100).bounds();
     assert_eq!((bounds.left, bounds.top), (0, 0));
+}
+
+#[test]
+fn stroke_opacity_scales_the_ribbon() {
+    let faint = Stroke { opacity: 0.25, ..stroke() };
+    assert_eq!(ribbon(&faint, Proxy::default(), 100, 100).coverage_at(50, 50), 0.25);
 }

@@ -1,0 +1,90 @@
+[search]
+candidates = 12
+refinements = 2
+
+[brushes]
+knife = { file = "../brushes/knife.toml" }
+oil = { file = "../brushes/wet_oil.toml" }
+round = { file = "../brushes/soft_round.toml" }
+air = { file = "../brushes/airbrush.toml" }
+liner = { file = "../brushes/liner.toml" }
+
+[strokes]
+ground = { radius = [40, 90], length = [120, 400], bend = [0.0, 0.1], pressure = "flat", jitter = 0.05 }
+block = { radius = [16, 36], length = [40, 140], bend = [0.0, 0.0], pressure = "flat", jitter = 0.08, follow = 0.7, aim = [384, 440], opacity = 0.9 }
+hair = { radius = [4, 12], length = [60, 240], bend = [0.0, 0.2], jitter = 0.06, follow = 0.9, opacity = 0.8 }
+plane = { radius = [8, 20], length = [20, 80], bend = [0.0, 0.2], pressure = "flat", jitter = 0.0, follow = 0.4 }
+blend = { radius = [5, 14], length = [15, 60], bend = [0.0, 0.2], pressure = "flat", jitter = 0.0, follow = 0.4 }
+shape = { radius = [1.5, 5], length = [6, 30], bend = [0.0, 0.1], pressure = "flat", jitter = 0.0, follow = 0.5 }
+edge = { radius = [0.5, 1.2], length = [6, 40], bend = [0.0, 0.1], pressure = "flat", jitter = 0.0, follow = 0.9 }
+chip = { radius = [5, 12], length = [15, 50], bend = [0.0, 0.0], pressure = "flat", jitter = 0.12, follow = 0.8, aim = [384, 440] }
+
+[regions]
+frame = { centre = [384, 440], radius = 330, weight = 1.0, outside = 0.15, feather = 0.6 }
+face = { centre = [384, 440], radius = 240, weight = 4.0, outside = 0.25, feather = 0.5 }
+features = { centre = [384, 410], radius = 150, weight = 6.0, outside = 0.2, feather = 0.5 }
+away = { centre = [384, 440], radius = 260, weight = 0.05, outside = 1.0, feather = 0.4 }
+
+[[layers]]
+name = "ground"
+brush = "knife"
+stroke = "ground"
+count = 300
+placement = "random"
+reference = { blur = 20 }
+
+[[layers]]
+name = "blocks"
+brush = "knife"
+stroke = "block"
+count = 1200
+reference = { blur = 8 }
+
+[[layers]]
+name = "hair"
+brush = "oil"
+stroke = "hair"
+count = 1200
+region = "frame"
+reference = { smooth = 3 }
+
+[[layers]]
+name = "planes"
+brush = "round"
+stroke = "plane"
+count = 2500
+region = "face"
+reference = { smooth = 8 }
+
+[[layers]]
+name = "blend"
+brush = "air"
+stroke = "blend"
+count = 4000
+region = "face"
+reference = { smooth = 6 }
+
+[[layers]]
+name = "shapes"
+brush = "round"
+stroke = "shape"
+count = 5000
+region = "features"
+reference = { smooth = 4, edges = 2.0 }
+
+[[layers]]
+name = "edges"
+brush = "liner"
+stroke = "edge"
+count = 2500
+placement = "edges"
+region = "features"
+reference = { smooth = 3, edges = 4.0 }
+
+[[layers]]
+name = "chips"
+brush = "knife"
+stroke = "chip"
+count = 250
+region = "away"
+accident = 0.6

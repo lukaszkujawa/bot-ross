@@ -1,11 +1,14 @@
 use crate::color::Hsv;
+use crate::flow::Flow;
 use crate::reference::Reference;
 use crate::stroke::{Curve, Point, Pressure, Stroke};
 use rand::{Rng, RngExt};
 use serde::Deserialize;
-use std::f32::consts::TAU;
+use std::f32::consts::{PI, TAU};
 
 const TURN: f32 = TAU / 24.0;
+const TRACE_STEPS: usize = 12;
+const HUE_SHARE: f32 = 0.15;
 const STRETCH: [f32; 2] = [0.8, 1.25];
 const SHIFT: f32 = 0.5;
 const REBEND: f32 = 0.25;
@@ -21,6 +24,15 @@ pub struct StrokeType {
     pub pressure: PressureShape,
     #[serde(default = "default_jitter")]
     pub jitter: f32,
+    #[serde(default)]
+    pub follow: f32,
+    #[serde(default = "one")]
+    pub opacity: f32,
+    pub aim: Option<[f32; 2]>,
+}
+
+fn one() -> f32 {
+    1.0
 }
 
 fn default_bend() -> [f32; 2] {
@@ -61,22 +73,47 @@ impl StrokeType {
         if !(self.bend[0] >= 0.0 && self.bend[0] <= self.bend[1]) {
             problems.push(format!("{label}: bend must be [min, max] with 0 <= min <= max"));
         }
-        if !(0.0..=1.0).contains(&self.jitter) {
-            problems.push(format!("{label}: jitter must be between 0 and 1"));
+        for (key, value) in [("jitter", self.jitter), ("follow", self.follow), ("opacity", self.opacity)] {
+            if !(0.0..=1.0).contains(&value) {
+                problems.push(format!("{label}: {key} must be between 0 and 1"));
+            }
         }
         problems
     }
 
-    pub fn random(&self, start: Point, reference: &Reference, rng: &mut impl Rng) -> Stroke {
+    pub fn random(&self, start: Point, reference: &Reference, flow: &Flow, rng: &mut impl Rng) -> Stroke {
         let mut pick = |range: [f32; 2]| rng.random_range(range[0]..=range[1]);
-        let (radius, length, angle) = (pick(self.radius), pick(self.length), pick([0.0, TAU]));
-        let (dx, dy) = (angle.cos(), angle.sin());
-        let along = |t: f32, sideways: f32| Point { x: start.x + dx * length * t - dy * sideways, y: start.y + dy * length * t + dx * sideways };
-        let sign = |rng: &mut dyn FnMut([f32; 2]) -> f32| if rng([0.0, 1.0]) < 0.5 { -1.0 } else { 1.0 };
-        let bends = [pick(self.bend) * length * sign(&mut pick), pick(self.bend) * length * sign(&mut pick)];
-        let path = Curve { from: start, control: [along(1.0 / 3.0, bends[0]), along(2.0 / 3.0, bends[1])], to: along(1.0, 0.0) };
+        let (radius, length) = (pick(self.radius), pick(self.length));
+        let (tangent, strength) = flow.at(start);
+        let attraction = self.follow * strength;
+        let heading = tangent + if pick([0.0, 1.0]) < 0.5 { PI } else { 0.0 };
+        let angle = heading + pick([-1.0, 1.0]) * (1.0 - attraction) * PI;
+        let traced = self.trace(start, angle, length, flow);
+        let chord = traced[0].distance(traced[3]).max(f32::EPSILON);
+        let (nx, ny) = (-(traced[3].y - traced[0].y) / chord, (traced[3].x - traced[0].x) / chord);
+        let mut path = through(traced);
+        for control in &mut path.control {
+            let bend = pick(self.bend) * length * (1.0 - attraction) * if pick([0.0, 1.0]) < 0.5 { -1.0 } else { 1.0 };
+            *control = Point { x: control.x + nx * bend, y: control.y + ny * bend };
+        }
         let color = self.jittered(Hsv::from_rgb(reference.mean_along(&path)), &mut pick);
-        Stroke { path, pressure: self.pressure.profile(), color, radius, seed: rng.random() }
+        Stroke { path, pressure: self.pressure.profile(), color, radius, opacity: self.opacity, seed: rng.random() }
+    }
+
+    fn trace(&self, start: Point, mut direction: f32, length: f32, flow: &Flow) -> [Point; 4] {
+        let step = length / TRACE_STEPS as f32;
+        let mut point = start;
+        let mut passed = [start; 4];
+        for i in 1..=TRACE_STEPS {
+            let (tangent, strength) = flow.aligned(point, direction);
+            let pull = self.follow * strength;
+            direction += ((tangent - direction + PI).rem_euclid(TAU) - PI) * pull;
+            point = Point { x: point.x + direction.cos() * step, y: point.y + direction.sin() * step };
+            if i % (TRACE_STEPS / 3) == 0 {
+                passed[i / (TRACE_STEPS / 3)] = point;
+            }
+        }
+        passed
     }
 
     pub fn mutate(&self, stroke: &Stroke, rng: &mut impl Rng) -> Stroke {
@@ -115,6 +152,19 @@ impl StrokeType {
 
     fn jittered(&self, color: Hsv, pick: &mut impl FnMut([f32; 2]) -> f32) -> Hsv {
         let jitter = [-self.jitter, self.jitter];
-        Hsv { hue: color.hue, saturation: (color.saturation + pick(jitter)).clamp(0.0, 1.0), value: (color.value + pick(jitter)).clamp(0.0, 1.0) }
+        Hsv {
+            hue: (color.hue + pick(jitter) * HUE_SHARE).rem_euclid(1.0),
+            saturation: (color.saturation + pick(jitter)).clamp(0.0, 1.0),
+            value: (color.value + pick(jitter)).clamp(0.0, 1.0),
+        }
+    }
+}
+
+fn through([p0, p1, p2, p3]: [Point; 4]) -> Curve {
+    let mix = |a: f32, b: f32, c: f32, d: f32| (-5.0 * a + 18.0 * b - 9.0 * c + 2.0 * d) / 6.0;
+    Curve {
+        from: p0,
+        control: [Point { x: mix(p0.x, p1.x, p2.x, p3.x), y: mix(p0.y, p1.y, p2.y, p3.y) }, Point { x: mix(p3.x, p2.x, p1.x, p0.x), y: mix(p3.y, p2.y, p1.y, p0.y) }],
+        to: p3,
     }
 }

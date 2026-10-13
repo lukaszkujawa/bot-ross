@@ -5,6 +5,8 @@ use std::error::Error;
 use std::path::Path;
 
 const CURVE_SAMPLES: usize = 5;
+const SMOOTH_PASSES: usize = 3;
+const SMOOTH_RANGE: f32 = 0.1;
 
 pub struct Reference {
     pub width: usize,
@@ -52,6 +54,51 @@ impl Reference {
         mean(self.rgb.iter().copied(), self.rgb.len())
     }
 
+    pub fn blurred(&self, sigma: f32) -> Self {
+        if sigma <= 0.0 {
+            return Self::from_pixels(self.width, self.height, self.rgb.clone());
+        }
+        let reach = (sigma * 3.0).ceil() as usize;
+        let kernel: Vec<f32> = (0..=2 * reach).map(|i| (-((i as f32 - reach as f32).powi(2)) / (2.0 * sigma * sigma)).exp()).collect();
+        let total: f32 = kernel.iter().sum();
+        let rows = smear(&self.rgb, self.width, self.height, &kernel, total, |x, y, k| (x as isize + k, y as isize));
+        let both = smear(&rows, self.width, self.height, &kernel, total, |x, y, k| (x as isize, y as isize + k));
+        Self::from_pixels(self.width, self.height, both)
+    }
+
+    pub fn smoothed(&self, sigma: f32) -> Self {
+        if sigma <= 0.0 {
+            return Self::from_pixels(self.width, self.height, self.rgb.clone());
+        }
+        let reach = (sigma * 2.0).ceil() as usize;
+        let kernel: Vec<f32> = (0..=2 * reach).map(|i| (-((i as f32 - reach as f32).powi(2)) / (2.0 * sigma * sigma)).exp()).collect();
+        let mut rgb = self.rgb.clone();
+        for _ in 0..SMOOTH_PASSES {
+            let rows = keep_edges(&rgb, self.width, self.height, &kernel, |x, y, k| (x as isize + k, y as isize));
+            rgb = keep_edges(&rows, self.width, self.height, &kernel, |x, y, k| (x as isize, y as isize + k));
+        }
+        Self::from_pixels(self.width, self.height, rgb)
+    }
+
+    pub fn graded(&self, contrast: f32, saturation: f32, levels: u8) -> Self {
+        let unit = OPAQUE as f32;
+        let rgb = self
+            .rgb
+            .iter()
+            .map(|pixel| {
+                let [r, g, b] = pixel.map(|c| c as f32 / unit);
+                let grey = r * 0.3 + g * 0.5 + b * 0.2;
+                [r, g, b].map(|c| {
+                    let saturated = grey + (c - grey) * saturation;
+                    let contrasted = 0.5 + (saturated - 0.5) * contrast;
+                    let stepped = if levels >= 2 { (contrasted * (levels - 1) as f32).round() / (levels - 1) as f32 } else { contrasted };
+                    (stepped.clamp(0.0, 1.0) * unit).round() as u16
+                })
+            })
+            .collect();
+        Self::from_pixels(self.width, self.height, rgb)
+    }
+
     pub fn edges(&self) -> Vec<f32> {
         let luminance = |x: usize, y: usize| {
             let [r, g, b] = self.pixel(x, y);
@@ -69,6 +116,48 @@ impl Reference {
         strength.iter_mut().for_each(|s| *s /= peak);
         strength
     }
+}
+
+fn smear(pixels: &[[u16; 3]], width: usize, height: usize, kernel: &[f32], total: f32, tap: impl Fn(usize, usize, isize) -> (isize, isize)) -> Vec<[u16; 3]> {
+    let reach = (kernel.len() / 2) as isize;
+    (0..width * height)
+        .map(|index| {
+            let (x, y) = (index % width, index / width);
+            let mut sum = [0.0f32; 3];
+            for (offset, weight) in kernel.iter().enumerate() {
+                let (sx, sy) = tap(x, y, offset as isize - reach);
+                let (sx, sy) = (sx.clamp(0, width as isize - 1) as usize, sy.clamp(0, height as isize - 1) as usize);
+                for (channel, value) in sum.iter_mut().zip(pixels[sy * width + sx]) {
+                    *channel += value as f32 * weight;
+                }
+            }
+            sum.map(|channel| (channel / total).round() as u16)
+        })
+        .collect()
+}
+
+fn keep_edges(pixels: &[[u16; 3]], width: usize, height: usize, kernel: &[f32], tap: impl Fn(usize, usize, isize) -> (isize, isize)) -> Vec<[u16; 3]> {
+    let reach = (kernel.len() / 2) as isize;
+    let range = SMOOTH_RANGE * OPAQUE as f32;
+    (0..width * height)
+        .map(|index| {
+            let (x, y) = (index % width, index / width);
+            let centre = pixels[index];
+            let (mut sum, mut total) = ([0.0f32; 3], 0.0f32);
+            for (offset, weight) in kernel.iter().enumerate() {
+                let (sx, sy) = tap(x, y, offset as isize - reach);
+                let (sx, sy) = (sx.clamp(0, width as isize - 1) as usize, sy.clamp(0, height as isize - 1) as usize);
+                let sample = pixels[sy * width + sx];
+                let difference: f32 = (0..3).map(|c| (sample[c] as f32 - centre[c] as f32).powi(2)).sum::<f32>().sqrt();
+                let closeness = weight * (-(difference * difference) / (2.0 * range * range)).exp();
+                for (channel, value) in sum.iter_mut().zip(sample) {
+                    *channel += value as f32 * closeness;
+                }
+                total += closeness;
+            }
+            sum.map(|channel| (channel / total).round() as u16)
+        })
+        .collect()
 }
 
 fn mean(pixels: impl Iterator<Item = [u16; 3]>, count: usize) -> [f32; 3] {

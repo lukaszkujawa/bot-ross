@@ -99,5 +99,6 @@ pub struct Stroke {
     pub pressure: Pressure,
     pub color: Hsv,
     pub radius: f32,
+    pub opacity: f32,
     pub seed: u64,
 }

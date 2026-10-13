@@ -6,13 +6,45 @@ refinements = 2
 air = { file = "../brushes/airbrush.toml" }
 round = { file = "../brushes/soft_round.toml" }
 pen = { file = "../brushes/pen.toml" }
+liner = { file = "../brushes/liner.toml" }
 
 [strokes]
-wash = { radius = [60, 120], length = [100, 400], pressure = "flat", jitter = 0.02 }
-soft = { radius = [20, 45], length = [40, 160], pressure = "flat", jitter = 0.02 }
-shade = { radius = [6, 16], length = [15, 60], bend = [0.0, 0.2], pressure = "flat", jitter = 0.02 }
-detail = { radius = [1.5, 4], length = [6, 25], bend = [0.0, 0.1], pressure = "flat", jitter = 0.0 }
-hairline = { radius = [0.6, 1.2], length = [4, 16], bend = [0.0, 0.1], pressure = "flat", jitter = 0.0 }
+wash = { radius = [
+  60,
+  120,
+], length = [
+  100,
+  400,
+], pressure = "flat", jitter = 0.02 }
+soft = { radius = [
+  20,
+  45,
+], length = [
+  40,
+  160,
+], pressure = "flat", jitter = 0.02 }
+shade = { radius = [
+  6,
+  16,
+], length = [
+  15,
+  60,
+], bend = [
+  0.0,
+  0.2,
+], pressure = "flat", jitter = 0.02 }
+detail = { radius = [
+  1.5,
+  4,
+], length = [
+  6,
+  25,
+], bend = [
+  0.0,
+  0.1,
+], pressure = "flat", jitter = 0.0 }
+
+hairline = { radius = [0.4, 0.6], length = [10, 80], bend = [0.0, 0.1], pressure = "flat", jitter = 0.0 }
 
 [[layers]]
 name = "wash"
@@ -40,7 +72,7 @@ count = 8000
 
 [[layers]]
 name = "hairline"
-brush = "pen"
+brush = "liner"
 stroke = "hairline"
-count = 3000
+count = 1000
 placement = "edges"

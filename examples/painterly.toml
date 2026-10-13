@@ -12,13 +12,13 @@ pen = { file = "../brushes/pen.toml" }
 
 [strokes]
 sweep = { radius = [35, 80], length = [150, 450], bend = [0.0, 0.3], pressure = "flat", jitter = 0.04 }
-scumble = { radius = [25, 50], length = [120, 360], bend = [0.0, 0.3], pressure = "fading", jitter = 0.06 }
-stroke = { radius = [12, 30], length = [50, 180], bend = [0.0, 0.3], jitter = 0.04 }
+scumble = { radius = [25, 50], length = [120, 360], bend = [0.0, 0.3], pressure = "fading", jitter = 0.06, follow = 0.5 }
+stroke = { radius = [12, 30], length = [50, 180], bend = [0.0, 0.3], jitter = 0.04, follow = 0.6 }
 flick = { radius = [2, 4], length = [4, 14], bend = [0.0, 0.1], pressure = "flat", jitter = 0.15 }
-hair = { radius = [3, 8], length = [20, 80], bend = [0.0, 0.2], jitter = 0.02 }
+hair = { radius = [3, 8], length = [20, 80], bend = [0.0, 0.2], jitter = 0.02, follow = 0.8 }
 soft = { radius = [6, 16], length = [15, 60], bend = [0.0, 0.2], pressure = "flat", jitter = 0.02 }
 refine = { radius = [1.5, 5], length = [6, 30], bend = [0.0, 0.1], pressure = "flat", jitter = 0.0 }
-hairline = { radius = [0.6, 1.5], length = [4, 20], bend = [0.0, 0.1], pressure = "flat", jitter = 0.0 }
+hairline = { radius = [0.6, 1.5], length = [4, 20], bend = [0.0, 0.1], pressure = "flat", jitter = 0.0, follow = 0.7 }
 
 [regions]
 frame = { centre = [384, 440], radius = 330, weight = 1.0, outside = 0.1, feather = 0.6 }
@@ -31,6 +31,7 @@ brush = "dry"
 stroke = "scumble"
 count = 600
 placement = "random"
+reference = { blur = 16 }
 
 [[layers]]
 name = "sweeps"
@@ -38,6 +39,7 @@ brush = "knife"
 stroke = "sweep"
 count = 150
 region = "frame"
+reference = { blur = 20 }
 
 [[layers]]
 name = "strokes"
@@ -45,6 +47,7 @@ brush = "oil"
 stroke = "stroke"
 count = 1000
 region = "frame"
+reference = { blur = 6 }
 
 [[layers]]
 name = "hair"
@@ -66,6 +69,7 @@ brush = "round"
 stroke = "refine"
 count = 5000
 region = "features"
+reference = { edges = 3.0 }
 
 [[layers]]
 name = "accents"
@@ -74,6 +78,7 @@ stroke = "hairline"
 count = 1500
 placement = "edges"
 region = "features"
+reference = { edges = 4.0 }
 
 [[layers]]
 name = "flicks"

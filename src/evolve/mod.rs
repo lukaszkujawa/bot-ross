@@ -6,12 +6,13 @@ use crate::canvas::Canvas;
 use crate::evolve::progress::Progress;
 use crate::evolve::search::Search;
 use crate::fitness::Fitness;
+use crate::flow::Flow;
 use crate::layer::tiles::Bounds;
 use crate::painting::config::{PlacementMode, SearchConfig};
 use crate::painting::plan::LayerPlan;
 use crate::placement::Placement;
 use crate::reference::Reference;
-use rand::Rng;
+use rand::{Rng, RngExt};
 use std::error::Error;
 use std::time::Instant;
 
@@ -29,20 +30,44 @@ pub struct Outcome {
 pub fn run_layer(plan: &LayerPlan, search: SearchConfig, canvas: &mut Canvas, reference: &Reference, progress: &mut Progress, rng: &mut impl Rng) -> Result<Outcome, Box<dyn Error>> {
     let mut brush = Brush::load(&plan.brush)?;
     let (width, height) = (canvas.width, canvas.height);
-    let mut fitness = Fitness::new(reference, canvas.composite());
-    if let Some(region) = plan.region {
-        fitness.weigh(|x, y| region.weight_at(x as f32, y as f32));
+    let (softened, flattened, graded);
+    let mut target = reference;
+    if plan.reference.blur > 0.0 {
+        softened = target.blurred(plan.reference.blur);
+        target = &softened;
     }
-    let edges = (plan.placement == PlacementMode::Edges).then(|| reference.edges());
+    if plan.reference.smooth > 0.0 {
+        flattened = target.smoothed(plan.reference.smooth);
+        target = &flattened;
+    }
+    if plan.reference.grades() {
+        graded = target.graded(plan.reference.contrast, plan.reference.saturation, plan.reference.levels);
+        target = &graded;
+    }
+    let mut fitness = Fitness::new(target, canvas.composite());
+    let edges = (plan.placement == PlacementMode::Edges || plan.reference.edges > 0.0).then(|| reference.edges());
+    if plan.region.is_some() || plan.reference.edges > 0.0 {
+        fitness.weigh(|x, y| {
+            let region = plan.region.map_or(1.0, |region| region.weight_at(x as f32, y as f32));
+            let contour = edges.as_ref().map_or(0.0, |edges| edges[y * width + x]);
+            region * (1.0 + plan.reference.edges * contour)
+        });
+    }
     let mut placement = Placement::new(&fitness, plan.placement, edges, CELL);
-    let searcher = Search { kind: &plan.stroke, proxy: brush.proxy(), candidates: plan.candidates.max(1), refinements: plan.refinements };
+    let flow = match plan.stroke.aim {
+        Some(centre) => Flow::radial(width, height, centre),
+        None if plan.stroke.follow > 0.0 => Flow::of(reference),
+        None => Flow::flat(width, height),
+    };
+    let searcher = Search { kind: &plan.stroke, flow: &flow, proxy: brush.proxy(), candidates: plan.candidates.max(1), refinements: plan.refinements };
     let layer = canvas.add_layer();
     let mut outcome = Outcome::default();
     let started = Instant::now();
     while outcome.placed < plan.count && outcome.attempts < plan.count * search.patience.max(1) && !progress.stopped {
         outcome.attempts += 1;
-        let (stroke, delta) = searcher.run(placement.pick(rng), &fitness, reference, rng);
-        if delta >= 0 {
+        let (stroke, delta) = searcher.run(placement.pick(rng), &fitness, target, rng);
+        let forgiven = plan.accident > 0.0 && rng.random_range(0.0..1.0) < plan.accident;
+        if delta >= 0 && !forgiven {
             continue;
         }
         let [xs, ys] = stroke.path.extent();
@@ -51,7 +76,7 @@ pub fn run_layer(plan: &LayerPlan, search: SearchConfig, canvas: &mut Canvas, re
         let before = fitness.total();
         let touched = brush.paint(layer, &stroke).union(margin);
         fitness.refresh(layer, touched);
-        if fitness.total() >= before {
+        if fitness.total() >= before && !forgiven {
             layer.write_region(margin, &snapshot);
             fitness.refresh(layer, touched);
             outcome.rejected += 1;

@@ -1,0 +1,89 @@
+[search]
+candidates = 12
+refinements = 2
+
+[brushes]
+knife = { file = "../brushes/knife.toml" }
+dry = { file = "../brushes/dry_brush.toml" }
+oil = { file = "../brushes/wet_oil.toml" }
+air = { file = "../brushes/airbrush.toml" }
+round = { file = "../brushes/soft_round.toml" }
+liner = { file = "../brushes/liner.toml" }
+
+[strokes]
+ground = { radius = [40, 90], length = [150, 450], bend = [0.0, 0.2], pressure = "flat", jitter = 0.05 }
+scrape = { radius = [20, 45], length = [80, 300], bend = [0.0, 0.2], pressure = "fading", jitter = 0.08, follow = 0.4, opacity = 0.8 }
+hair = { radius = [5, 14], length = [60, 260], bend = [0.0, 0.2], jitter = 0.06, follow = 0.9, opacity = 0.7 }
+strand = { radius = [1.5, 4], length = [30, 160], bend = [0.0, 0.1], jitter = 0.08, follow = 0.95, opacity = 0.8 }
+plane = { radius = [8, 18], length = [15, 60], bend = [0.0, 0.2], pressure = "flat", jitter = 0.02, follow = 0.3 }
+refine = { radius = [1.5, 5], length = [6, 30], bend = [0.0, 0.1], pressure = "flat", jitter = 0.0, follow = 0.4 }
+edge = { radius = [0.5, 1.2], length = [6, 40], bend = [0.0, 0.1], pressure = "flat", jitter = 0.0, follow = 0.9 }
+mark = { radius = [3, 8], length = [40, 140], bend = [0.0, 0.1], pressure = "fading", jitter = 0.12, follow = 0.8, opacity = 0.6 }
+
+[regions]
+frame = { centre = [384, 440], radius = 330, weight = 1.0, outside = 0.1, feather = 0.6 }
+face = { centre = [384, 440], radius = 260, weight = 4.0, outside = 0.3, feather = 0.6 }
+features = { centre = [384, 410], radius = 160, weight = 6.0, outside = 0.2, feather = 0.6 }
+
+[[layers]]
+name = "ground"
+brush = "knife"
+stroke = "ground"
+count = 250
+placement = "random"
+reference = { blur = 24 }
+
+[[layers]]
+name = "scrape"
+brush = "dry"
+stroke = "scrape"
+count = 700
+region = "frame"
+reference = { blur = 10 }
+
+[[layers]]
+name = "hair"
+brush = "oil"
+stroke = "hair"
+count = 1200
+region = "frame"
+reference = { blur = 4 }
+
+[[layers]]
+name = "planes"
+brush = "air"
+stroke = "plane"
+count = 4000
+region = "face"
+
+[[layers]]
+name = "strands"
+brush = "dry"
+stroke = "strand"
+count = 1500
+region = "frame"
+
+[[layers]]
+name = "refine"
+brush = "round"
+stroke = "refine"
+count = 5000
+region = "features"
+reference = { edges = 3.0 }
+
+[[layers]]
+name = "edges"
+brush = "liner"
+stroke = "edge"
+count = 2500
+placement = "edges"
+region = "features"
+reference = { edges = 4.0 }
+
+[[layers]]
+name = "marks"
+brush = "dry"
+stroke = "mark"
+count = 150
+placement = "edges"
+accident = 0.5

@@ -13,6 +13,8 @@ pub struct Cli {
     pub out: PathBuf,
     #[arg(long)]
     pub seed: Option<u64>,
+    #[arg(long, value_delimiter = ',')]
+    pub layers: Vec<String>,
     #[arg(long)]
     pub headless: bool,
 }

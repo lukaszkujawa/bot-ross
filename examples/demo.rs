@@ -32,6 +32,7 @@ fn lane_stroke(index: usize) -> Stroke {
         pressure: Pressure::new(HAND_PRESSURE.to_vec()),
         color: Hsv { hue: index as f32 / PRESETS.len() as f32, saturation: 0.75, value: 0.65 },
         radius: lane * RADIUS_PER_LANE,
+        opacity: 1.0,
         seed: index as u64,
     }
 }

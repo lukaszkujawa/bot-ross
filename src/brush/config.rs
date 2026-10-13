@@ -1,4 +1,5 @@
 use crate::brush::bristles::Bristles;
+use crate::brush::line::Line;
 use crate::brush::paint::Paint;
 use crate::brush::stamp::Stamp;
 use crate::mypaint::engine::Engine;
@@ -19,6 +20,7 @@ pub struct BrushConfig {
     pub dynamics: BTreeMap<String, BTreeMap<String, Vec<[f32; 2]>>>,
     pub bristles: Option<Bristles>,
     pub stamp: Option<Stamp>,
+    pub line: Option<Line>,
     #[serde(default)]
     pub paint: Paint,
     #[serde(default)]

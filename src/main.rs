@@ -11,7 +11,8 @@ use std::error::Error;
 
 fn main() -> Result<(), Box<dyn Error>> {
     let cli = Cli::parse();
-    let plan = Plan::load(&cli.config)?;
+    let mut plan = Plan::load(&cli.config)?;
+    plan.only(&cli.layers)?;
     let reference = Reference::load(&cli.reference, cli.size)?;
     let mut canvas = Canvas::new(reference.width, reference.height, background(&plan.background, &reference)?);
     let title = cli.reference.file_name().map(|name| name.to_string_lossy().into_owned()).unwrap_or_default();

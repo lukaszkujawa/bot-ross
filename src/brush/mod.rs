@@ -1,6 +1,7 @@
 pub mod bristles;
 pub mod config;
 pub mod field;
+pub mod line;
 pub mod mark;
 pub mod paint;
 pub mod stamp;
@@ -9,6 +10,7 @@ mod walk;
 
 use crate::brush::bristles::Bristles;
 use crate::brush::config::BrushConfig;
+use crate::brush::line::Line;
 use crate::brush::paint::Paint;
 use crate::brush::stamp::Stamp;
 use crate::brush::tip::Tip;
@@ -32,6 +34,7 @@ pub struct Brush {
 enum Tool {
     Bristles { engine: Engine, bristles: Bristles },
     Stamp { tip: Tip, stamp: Stamp },
+    Line(Line),
 }
 
 impl Brush {
@@ -42,12 +45,17 @@ impl Brush {
     }
 
     pub fn from_config(config: BrushConfig, base: &Path) -> Result<Self, Box<dyn Error>> {
-        let tool = match (&config.bristles, &config.stamp) {
-            (Some(bristles), None) => Tool::Bristles { engine: config.engine()?, bristles: bristles.clone() },
-            (None, Some(stamp)) => Tool::Stamp { tip: Tip::load(base.join(&stamp.tip))?, stamp: stamp.clone() },
-            _ => return Err(format!("brush '{}' needs exactly one of [bristles] or [stamp]", config.name).into()),
+        let tool = match (&config.bristles, &config.stamp, &config.line) {
+            (Some(bristles), None, None) => Tool::Bristles { engine: config.engine()?, bristles: bristles.clone() },
+            (None, Some(stamp), None) => Tool::Stamp { tip: Tip::load(base.join(&stamp.tip))?, stamp: stamp.clone() },
+            (None, None, Some(line)) => Tool::Line(*line),
+            _ => return Err(format!("brush '{}' needs exactly one of [bristles], [stamp] or [line]", config.name).into()),
         };
-        Ok(Self { name: config.name, tool, paint: config.paint, proxy: config.proxy })
+        let proxy = match &tool {
+            Tool::Line(line) => line.proxy(),
+            _ => config.proxy,
+        };
+        Ok(Self { name: config.name, tool, paint: config.paint, proxy })
     }
 
     pub fn proxy(&self) -> Proxy {
@@ -62,6 +70,7 @@ impl Brush {
                 .iter()
                 .fold(Bounds::empty(), |painted, hair| painted.union(layer.trace(engine, &hair.samples))),
             Tool::Stamp { tip, stamp } => stamp.paint(tip, layer, stroke, &self.paint, &mut rng),
+            Tool::Line(line) => line.paint(layer, stroke),
         }
     }
 }

@@ -103,6 +103,29 @@ pub enum PlacementMode {
     Random,
 }
 
+#[derive(Debug, Clone, Copy, Deserialize, PartialEq)]
+#[serde(deny_unknown_fields, default)]
+pub struct Target {
+    pub blur: f32,
+    pub smooth: f32,
+    pub edges: f32,
+    pub levels: u8,
+    pub contrast: f32,
+    pub saturation: f32,
+}
+
+impl Default for Target {
+    fn default() -> Self {
+        Self { blur: 0.0, smooth: 0.0, edges: 0.0, levels: 0, contrast: 1.0, saturation: 1.0 }
+    }
+}
+
+impl Target {
+    pub fn grades(&self) -> bool {
+        self.levels >= 2 || self.contrast != 1.0 || self.saturation != 1.0
+    }
+}
+
 #[derive(Debug, Clone, Deserialize)]
 #[serde(deny_unknown_fields)]
 pub struct LayerConfig {
@@ -113,6 +136,12 @@ pub struct LayerConfig {
     pub region: Option<Named<Region>>,
     #[serde(default)]
     pub placement: PlacementMode,
+    #[serde(default)]
+    pub reference: Target,
+    #[serde(default)]
+    pub accident: f32,
+    #[serde(default)]
+    pub skip: bool,
     pub candidates: Option<usize>,
     pub refinements: Option<usize>,
 }

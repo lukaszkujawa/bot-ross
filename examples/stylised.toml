@@ -1,0 +1,61 @@
+[search]
+candidates = 12
+refinements = 2
+
+[brushes]
+hard = { file = "../brushes/hard_round.toml" }
+round = { file = "../brushes/soft_round.toml" }
+air = { file = "../brushes/airbrush.toml" }
+dry = { file = "../brushes/dry_brush.toml" }
+liner = { file = "../brushes/liner.toml" }
+
+[strokes]
+fill = { radius = [30, 70], length = [100, 400], bend = [0.0, 0.2], pressure = "flat", jitter = 0.0 }
+plane = { radius = [10, 25], length = [30, 150], bend = [0.0, 0.2], pressure = "flat", jitter = 0.0, follow = 0.5 }
+blend = { radius = [6, 16], length = [20, 80], bend = [0.0, 0.2], pressure = "flat", jitter = 0.0, follow = 0.4 }
+shape = { radius = [2, 6], length = [8, 40], bend = [0.0, 0.1], pressure = "flat", jitter = 0.0, follow = 0.5 }
+strand = { radius = [2, 6], length = [30, 140], bend = [0.0, 0.15], jitter = 0.03, follow = 0.9, opacity = 0.85 }
+edge = { radius = [0.5, 1.2], length = [8, 50], bend = [0.0, 0.1], pressure = "flat", jitter = 0.0, follow = 0.9 }
+
+[[layers]]
+name = "fill"
+brush = "hard"
+stroke = "fill"
+count = 600
+reference = { blur = 6, smooth = 8, contrast = 1.1, saturation = 1.15 }
+
+[[layers]]
+name = "planes"
+brush = "round"
+stroke = "plane"
+count = 2500
+reference = { smooth = 8, contrast = 1.1, saturation = 1.15 }
+
+[[layers]]
+name = "blend"
+brush = "air"
+stroke = "blend"
+count = 4000
+reference = { smooth = 6, contrast = 1.1, saturation = 1.15 }
+
+[[layers]]
+name = "shapes"
+brush = "round"
+stroke = "shape"
+count = 6000
+reference = { smooth = 4, contrast = 1.1, saturation = 1.15, edges = 2.0 }
+
+[[layers]]
+name = "strands"
+brush = "dry"
+stroke = "strand"
+count = 1500
+reference = { smooth = 3, contrast = 1.1, saturation = 1.15 }
+
+[[layers]]
+name = "edges"
+brush = "liner"
+stroke = "edge"
+count = 3000
+placement = "edges"
+reference = { smooth = 3, contrast = 1.1, saturation = 1.15, edges = 4.0 }

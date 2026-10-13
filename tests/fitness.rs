@@ -26,6 +26,7 @@ fn stroke() -> Stroke {
         pressure: Pressure::constant(1.0),
         color: Hsv { hue: 0.6, saturation: 0.8, value: 0.9 },
         radius: 6.0,
+        opacity: 1.0,
         seed: 1,
     }
 }

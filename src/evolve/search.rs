@@ -1,4 +1,5 @@
 use crate::fitness::Fitness;
+use crate::flow::Flow;
 use crate::painting::stroke_type::StrokeType;
 use crate::proxy::{Proxy, ribbon};
 use crate::reference::Reference;
@@ -11,6 +12,7 @@ const PARALLEL_AREA: f32 = 2000.0;
 
 pub struct Search<'a> {
     pub kind: &'a StrokeType,
+    pub flow: &'a Flow,
     pub proxy: Proxy,
     pub candidates: usize,
     pub refinements: usize,
@@ -18,7 +20,7 @@ pub struct Search<'a> {
 
 impl Search<'_> {
     pub fn run(&self, start: Point, fitness: &Fitness, reference: &Reference, rng: &mut impl Rng) -> (Stroke, i64) {
-        let mut best = self.round(fitness, rng, |seed| self.kind.random(start, reference, &mut StdRng::seed_from_u64(seed)));
+        let mut best = self.round(fitness, rng, |seed| self.kind.random(start, reference, self.flow, &mut StdRng::seed_from_u64(seed)));
         if best.1 >= 0 {
             return best;
         }

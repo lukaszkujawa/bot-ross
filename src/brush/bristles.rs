@@ -6,7 +6,7 @@ use rand::{Rng, RngExt};
 use serde::Deserialize;
 
 const SAMPLES_PER_RADIUS: f32 = 2.0;
-const THINNEST_DAB: f32 = 0.2;
+const THINNEST_DAB: f32 = 0.6;
 
 #[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq)]
 #[serde(rename_all = "lowercase")]
@@ -80,7 +80,7 @@ impl Bristles {
         let mut pick = |range: [f32; 2]| rng.random_range(range[0]..=range[1]);
         let sideways = position * self.spread * stroke.radius;
         let (onset, reach) = (pick(self.onset), pick(self.reach));
-        let opacity = pick(self.opacity);
+        let opacity = pick(self.opacity) * stroke.opacity;
         let full = pick(self.thickness) * stroke.radius;
         let shade = pick([-self.shade, self.shade]);
         let steps = (stroke.path.length() * (reach - onset) / stroke.radius * SAMPLES_PER_RADIUS).ceil().max(1.0);

@@ -28,7 +28,7 @@ pub fn ribbon(stroke: &Stroke, proxy: Proxy, width: usize, height: usize) -> Mar
         let centre = stroke.path.at(t);
         let radius = stroke.radius * proxy.width * (0.5 + 0.5 * stroke.pressure.at(t));
         let bounds = Bounds::around(centre.x, centre.y, radius + 1.0, width, height);
-        mark.add(bounds, rgb, |x, y| (radius + 0.5 - (x - centre.x).hypot(y - centre.y)).clamp(0.0, 1.0) * proxy.opacity);
+        mark.add(bounds, rgb, |x, y| (radius + 0.5 - (x - centre.x).hypot(y - centre.y)).clamp(0.0, 1.0) * proxy.opacity * stroke.opacity);
     }
     mark
 }

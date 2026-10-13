@@ -26,6 +26,7 @@ bot-ross photo.jpg --size 1024 --config examples/oil_portrait.toml --out paintin
 | `--config` | painting configuration, see below |
 | `--out` | PNG written when painting ends or the window is closed |
 | `--seed` | overrides the config seed; same config and seed give the same painting |
+| `--layers` | comma-separated layer names to paint, in config order; others are left out |
 | `--headless` | paint without the live window |
 
 A window shows the painting as it grows. Close it or press Escape to stop early; the painting so far is still saved.
@@ -60,11 +61,14 @@ snapshots = "frames"             # optional directory, PNG at every report
 file = "../brushes/wet_oil.toml" # brush preset, relative to this file
 
 [strokes.bold]
-radius = [10, 30]                # required
+radius = [10, 30]                # half-width in px, required; a mark paints about 2 × radius + 1 px wide, and never thinner than at 0.6
 length = [60, 300]               # required
 bend = [0.0, 0.3]                # control-point offset as a fraction of length; default [0.0, 0.3]
 pressure = "hand"                # "hand" | "flat" | "fading"; default "hand"
 jitter = 0.05                    # colour mutation step; default 0.05
+follow = 0.6                     # 0..1 attraction of stroke direction to contours in the reference; default 0
+opacity = 1.0                    # multiplier on the brush's opacity, for glazing; default 1.0
+aim = [512, 400]                 # optional point in px; with follow, strokes run toward or away from it instead of along contours
 
 [regions.face]
 centre = [512, 380]
@@ -80,13 +84,16 @@ stroke = "bold"                  # name, or inline { radius = [..], length = [..
 count = 400
 region = "face"                  # optional
 placement = "error"              # "error" | "edges" | "random"; default "error"
+reference = { blur = 12, smooth = 6, edges = 2.0, levels = 6, contrast = 1.2, saturation = 1.3 }   # optional target tweaks, see below
+accident = 0.0                   # chance to keep a stroke that does not lower the error, for deliberate marks; default 0
+skip = false                     # true leaves the layer out of the painting; default false
 candidates = 8                   # optional per-layer override
 refinements = 1                  # optional per-layer override
 ```
 
-Each layer is painted on its own transparent layer over everything below, so a painting is built from coarse to fine. Stroke colour is sampled from the reference under the stroke and mutated by `jitter`. `placement` decides where strokes start: where the painting is still worst, along edges in the reference, or anywhere.
+Each layer is painted on its own transparent layer over everything below, so a painting is built from coarse to fine. A layer's `reference` table changes what it is judged against: `blur` softens the target so broad strokes are scored on masses rather than detail they cannot paint, and stroke colours are sampled from the softened target too; `edges` multiplies the error along contours by one plus that factor so detail layers concentrate on getting edges right. `smooth` runs an edge-preserving filter with that spatial sigma in pixels, which flattens shading and noise inside a surface while keeping real boundaries sharp, the basis of a clean stylised look; `levels` posterises the target into that many tones per channel, and `contrast` and `saturation` scale it around mid grey, for flat, clearly separated planes in a stylised look; blur is applied first, so a small blur before posterising gives clean regions with crisp boundaries. All default to leaving the reference untouched. Stroke colour is sampled from the reference under the stroke and mutated by `jitter` in value and saturation, with a small hue drift. `follow` makes a stroke trace the reference's contours: its direction starts near the local contour tangent and is pulled back toward it at every step along its length, so strokes curve around shapes, with the pull scaled by the value and the local edge strength; flat areas stay random. With `aim` set, the contour field is replaced by straight lines through that point, so strokes lead the eye toward a focus. `placement` decides where strokes start: where the painting is still worst, along edges in the reference, or anywhere.
 
-Unknown keys and names are errors, and all problems in a file are reported at once. See `examples/quick.toml` for the smallest useful painting, `examples/oil_portrait.toml` for a four-layer oil painting, `examples/digital.toml` for a smooth hyper-realistic digital look, and `examples/painterly.toml` for expressive strokes around a refined face. Configs with a `face` region expect the face near the middle of a 1024px portrait; move the region for other framings.
+Unknown keys and names are errors, and all problems in a file are reported at once. See `examples/quick.toml` for the smallest useful painting, `examples/oil_portrait.toml` for a four-layer oil painting, `examples/digital.toml` for a smooth hyper-realistic digital look, `examples/painterly.toml` and `examples/painterly_portrait.toml` for expressive strokes around a refined face, `examples/stylised.toml` for smooth planes with crisp edges, and `examples/focus.toml` for a refined focus surrounded by rigid marks leading toward it. Configs with a `face` region expect the face near the middle of a 1024px portrait; move the region for other framings.
 
 ## How a stroke is chosen
 
@@ -122,6 +129,8 @@ The `[stamp]` tool sweeps a vector brush tip along the stroke instead, for rigid
 | `streaks` | strength of scrape streaks running along the stroke |
 | `smear` | how much paint already on the canvas is pushed into the mark |
 
+The `[line]` tool draws the stroke as a plain anti-aliased line of the stroke's colour at any radius, including sub-pixel ones that paint fainter rather than thinner; it has one key, `opacity`. It ignores the engine and paint sections and is exact for the search, so it never rejects a stroke.
+
 The paint layer models how much paint the tool carries and how it leaves the canvas.
 
 | Key | Meaning |
@@ -148,5 +157,5 @@ Presets in `brushes/` follow the physics of each tool:
 - Strokes follow cubic Bézier curves with a pressure profile that eases in and out like a hand
 - Strokes rendered by libmypaint with a bristle and paint-load model on top
 - Brushes defined in TOML: engine settings, input dynamics, bristles or a vector stamp, paint
-- Wet oil, dry brush, palette knife, calligraphy, pen, airbrush and soft round presets
+- Wet oil, dry brush, palette knife, calligraphy, pen, airbrush, soft round, hard round and liner presets
 - Live window while painting, PNG output, optional snapshots

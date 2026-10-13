@@ -1,5 +1,8 @@
 use bot_ross::brush::Brush;
 use bot_ross::brush::config::BrushConfig;
+use bot_ross::color::Hsv;
+use bot_ross::layer::Layer;
+use bot_ross::stroke::{Curve, Point, Pressure, Stroke};
 use std::path::Path;
 
 const MINIMAL: &str = r#"
@@ -31,7 +34,7 @@ fn unknown_setting_is_rejected_when_building() {
 
 #[test]
 fn shipped_presets_load() {
-    for preset in ["wet_oil", "dry_brush", "knife", "calligraphy", "pen", "airbrush", "soft_round"] {
+    for preset in ["wet_oil", "dry_brush", "knife", "calligraphy", "pen", "airbrush", "soft_round", "liner", "hard_round"] {
         let brush = Brush::load(format!("brushes/{preset}.toml")).unwrap();
         assert!(!brush.name.is_empty(), "{preset}");
     }
@@ -43,4 +46,37 @@ fn brush_needs_exactly_one_tool() {
     assert!(Brush::from_config(BrushConfig::parse(neither).unwrap(), Path::new(".")).is_err());
     let both = format!("{MINIMAL}\n[stamp]\ntip = \"brush_tips/knife.svg\"\nspacing = 0.1\nripple = 0.0\nwobble = 0.0\nstreaks = 0.0\nsmear = 0.0\n");
     assert!(Brush::from_config(BrushConfig::parse(&both).unwrap(), Path::new(".")).is_err());
+}
+
+#[test]
+fn sub_pixel_strokes_still_paint() {
+    let mut layer = Layer::new(100, 60);
+    let stroke = Stroke {
+        path: Curve::line(Point { x: 10.0, y: 30.0 }, Point { x: 90.0, y: 30.0 }),
+        pressure: Pressure::constant(1.0),
+        color: Hsv { hue: 0.0, saturation: 1.0, value: 0.0 },
+        radius: 0.2,
+        opacity: 1.0,
+        seed: 1,
+    };
+    Brush::load("brushes/pen.toml").unwrap().paint(&mut layer, &stroke);
+    let column: u32 = (0..60).map(|y| layer.pixels()[y * 100 + 50].alpha as u32).sum();
+    assert!(column > 16384, "{column}");
+}
+
+#[test]
+fn liner_paints_a_true_one_pixel_line() {
+    let mut layer = Layer::new(100, 60);
+    let stroke = Stroke {
+        path: Curve::line(Point { x: 10.0, y: 30.5 }, Point { x: 90.0, y: 30.5 }),
+        pressure: Pressure::constant(1.0),
+        color: Hsv { hue: 0.0, saturation: 1.0, value: 0.0 },
+        radius: 0.5,
+        opacity: 1.0,
+        seed: 1,
+    };
+    Brush::load("brushes/liner.toml").unwrap().paint(&mut layer, &stroke);
+    let column: Vec<u16> = (0..60).map(|y| layer.pixels()[y * 100 + 50].alpha).collect();
+    assert_eq!(column.iter().filter(|a| **a > 0).count(), 1);
+    assert_eq!(column[30], 32768);
 }

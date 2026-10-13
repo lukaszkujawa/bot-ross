@@ -36,6 +36,7 @@ fn random_stroke(rng: &mut impl Rng, seed: u64) -> Stroke {
         pressure: Pressure::new(vec![0.3, 0.9, 1.0, 0.8, 0.3]),
         color: Hsv { hue: rng.random(), saturation: 0.8, value: 0.7 },
         radius: rng.random_range(10.0..40.0),
+        opacity: 1.0,
         seed,
     }
 }

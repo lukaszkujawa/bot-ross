@@ -1,5 +1,7 @@
 use crate::painting::stroke_type::StrokeType;
-use serde::Deserialize;
+use crate::reference::Reference;
+use serde::{Deserialize, Serialize};
+use std::borrow::Cow;
 use std::collections::BTreeMap;
 use std::path::PathBuf;
 
@@ -61,7 +63,7 @@ pub struct BrushRef {
     pub file: PathBuf,
 }
 
-#[derive(Debug, Clone, Copy, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Copy, Deserialize, Serialize, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct Region {
     pub centre: [f32; 2],
@@ -124,10 +126,23 @@ impl Target {
     pub fn grades(&self) -> bool {
         self.levels >= 2 || self.contrast != 1.0 || self.saturation != 1.0
     }
+
+    pub fn prepare<'a>(&self, reference: &'a Reference) -> Cow<'a, Reference> {
+        let mut target = Cow::Borrowed(reference);
+        if self.blur > 0.0 {
+            target = Cow::Owned(target.blurred(self.blur));
+        }
+        if self.smooth > 0.0 {
+            target = Cow::Owned(target.smoothed(self.smooth));
+        }
+        if self.grades() {
+            target = Cow::Owned(target.graded(self.contrast, self.saturation, self.levels));
+        }
+        target
+    }
 }
 
 #[derive(Debug, Clone, Deserialize)]
-#[serde(deny_unknown_fields)]
 pub struct LayerConfig {
     pub name: String,
     pub brush: Named<BrushRef>,
@@ -144,6 +159,8 @@ pub struct LayerConfig {
     pub skip: bool,
     pub candidates: Option<usize>,
     pub refinements: Option<usize>,
+    #[serde(flatten)]
+    pub overrides: BTreeMap<String, toml::Value>,
 }
 
 #[derive(Debug, Clone, Deserialize)]

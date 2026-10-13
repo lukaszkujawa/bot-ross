@@ -1,3 +1,4 @@
+pub mod bounds;
 pub mod brush;
 pub mod canvas;
 pub mod cli;
@@ -7,6 +8,7 @@ pub mod fitness;
 pub mod flow;
 pub mod image;
 pub mod layer;
+pub mod mark;
 pub mod mypaint;
 pub mod output;
 pub mod painter;

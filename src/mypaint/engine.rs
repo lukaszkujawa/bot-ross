@@ -1,11 +1,23 @@
 use crate::color::Hsv;
 use crate::mypaint::ffi;
+use crate::mypaint::surface::Surface;
+use crate::stroke::Point;
 use std::error::Error;
 use std::ffi::CString;
 use std::fs;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 const BRUSHES_DIR: &str = env!("MYPAINT_BRUSHES_DIR");
+const SEGMENT_SECONDS: f64 = 0.02;
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Sample {
+    pub point: Point,
+    pub radius: f32,
+    pub opacity: f32,
+    pub pressure: f32,
+    pub color: Hsv,
+}
 
 pub struct Engine {
     raw: *mut ffi::MyPaintBrush,
@@ -31,10 +43,6 @@ impl Engine {
         Ok(engine)
     }
 
-    pub fn template_path(name: &str) -> PathBuf {
-        Path::new(BRUSHES_DIR).join(format!("{name}.myb"))
-    }
-
     pub fn set(&mut self, setting: &str, value: f32) -> Result<(), Box<dyn Error>> {
         unsafe { ffi::mypaint_brush_set_base_value(self.raw, setting_id(setting)?, value) };
         Ok(())
@@ -53,22 +61,24 @@ impl Engine {
         Ok(())
     }
 
-    pub fn set_color(&mut self, color: Hsv) {
-        self.set_known("color_h", color.hue);
-        self.set_known("color_s", color.saturation);
-        self.set_known("color_v", color.value);
-    }
-
-    pub fn set_radius(&mut self, pixels: f32) {
-        self.set_known("radius_logarithmic", pixels.ln());
-    }
-
-    pub fn set_opacity(&mut self, opacity: f32) {
-        self.set_known("opaque", opacity);
-    }
-
-    pub(crate) fn raw(&mut self) -> *mut ffi::MyPaintBrush {
-        self.raw
+    pub fn stroke(&mut self, surface: &Surface, samples: &[Sample]) -> ffi::MyPaintRectangle {
+        let interface = surface.interface();
+        unsafe {
+            ffi::mypaint_brush_reset(self.raw);
+            ffi::mypaint_brush_new_stroke(self.raw);
+            ffi::mypaint_surface_begin_atomic(interface);
+        }
+        for sample in samples {
+            self.set_known("color_h", sample.color.hue);
+            self.set_known("color_s", sample.color.saturation);
+            self.set_known("color_v", sample.color.value);
+            self.set_known("radius_logarithmic", sample.radius.ln());
+            self.set_known("opaque", sample.opacity);
+            unsafe { ffi::mypaint_brush_stroke_to(self.raw, interface, sample.point.x, sample.point.y, sample.pressure, 0.0, 0.0, SEGMENT_SECONDS) };
+        }
+        let mut touched = ffi::MyPaintRectangle::default();
+        unsafe { ffi::mypaint_surface_end_atomic(interface, &mut touched) };
+        touched
     }
 
     fn allocate() -> Self {

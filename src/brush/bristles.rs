@@ -1,7 +1,7 @@
 use crate::brush::paint::Paint;
 use crate::brush::walk::Walk;
-use crate::color::Hsv;
-use crate::stroke::{Point, Stroke};
+use crate::mypaint::engine::Sample;
+use crate::stroke::Stroke;
 use rand::{Rng, RngExt};
 use serde::Deserialize;
 
@@ -46,15 +46,6 @@ fn one_pixel() -> f32 {
 
 pub struct Hair {
     pub samples: Vec<Sample>,
-}
-
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Sample {
-    pub point: Point,
-    pub radius: f32,
-    pub opacity: f32,
-    pub pressure: f32,
-    pub color: Hsv,
 }
 
 impl Bristles {

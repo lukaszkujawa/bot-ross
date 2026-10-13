@@ -1,5 +1,9 @@
 pub const OPAQUE: u16 = 1 << 15;
 
+pub fn luminance([r, g, b]: [f32; 3]) -> f32 {
+    r * 0.3 + g * 0.5 + b * 0.2
+}
+
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Hsv {
     pub hue: f32,
@@ -10,6 +14,10 @@ pub struct Hsv {
 impl Hsv {
     pub fn shaded(self, delta: f32) -> Self {
         Self { value: (self.value + delta).clamp(0.0, 1.0), ..self }
+    }
+
+    pub fn contrasted(self, contrast: f32) -> Self {
+        Self { value: (0.5 + (self.value - 0.5) * contrast).clamp(0.0, 1.0), ..self }
     }
 
     pub fn from_rgb([r, g, b]: [f32; 3]) -> Self {

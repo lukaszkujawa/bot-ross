@@ -3,7 +3,7 @@ use crate::flow::Flow;
 use crate::reference::Reference;
 use crate::stroke::{Curve, Point, Pressure, Stroke};
 use rand::{Rng, RngExt};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use std::f32::consts::{PI, TAU};
 
 const TURN: f32 = TAU / 24.0;
@@ -13,7 +13,7 @@ const STRETCH: [f32; 2] = [0.8, 1.25];
 const SHIFT: f32 = 0.5;
 const REBEND: f32 = 0.25;
 
-#[derive(Debug, Clone, Deserialize, PartialEq)]
+#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
 #[serde(deny_unknown_fields)]
 pub struct StrokeType {
     pub radius: [f32; 2],
@@ -24,6 +24,8 @@ pub struct StrokeType {
     pub pressure: PressureShape,
     #[serde(default = "default_jitter")]
     pub jitter: f32,
+    #[serde(default = "one")]
+    pub contrast: f32,
     #[serde(default)]
     pub follow: f32,
     #[serde(default = "one")]
@@ -43,7 +45,7 @@ fn default_jitter() -> f32 {
     0.05
 }
 
-#[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq)]
+#[derive(Clone, Copy, Debug, Default, Deserialize, Serialize, PartialEq)]
 #[serde(rename_all = "lowercase")]
 pub enum PressureShape {
     #[default]
@@ -78,6 +80,9 @@ impl StrokeType {
                 problems.push(format!("{label}: {key} must be between 0 and 1"));
             }
         }
+        if self.contrast < 0.0 {
+            problems.push(format!("{label}: contrast must not be negative"));
+        }
         problems
     }
 
@@ -96,7 +101,7 @@ impl StrokeType {
             let bend = pick(self.bend) * length * (1.0 - attraction) * if pick([0.0, 1.0]) < 0.5 { -1.0 } else { 1.0 };
             *control = Point { x: control.x + nx * bend, y: control.y + ny * bend };
         }
-        let color = self.jittered(Hsv::from_rgb(reference.mean_along(&path)), &mut pick);
+        let color = self.jittered(Hsv::from_rgb(reference.mean_along(&path)).contrasted(self.contrast), &mut pick);
         Stroke { path, pressure: self.pressure.profile(), color, radius, opacity: self.opacity, seed: rng.random() }
     }
 

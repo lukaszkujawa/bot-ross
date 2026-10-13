@@ -6,7 +6,7 @@ use rand::SeedableRng;
 use rand::rngs::StdRng;
 
 fn kind() -> StrokeType {
-    StrokeType { radius: [4.0, 9.0], length: [20.0, 80.0], bend: [0.0, 0.3], pressure: PressureShape::Hand, jitter: 0.1, follow: 0.0, opacity: 1.0, aim: None }
+    StrokeType { radius: [4.0, 9.0], length: [20.0, 80.0], bend: [0.0, 0.3], pressure: PressureShape::Hand, jitter: 0.1, contrast: 1.0, follow: 0.0, opacity: 1.0, aim: None }
 }
 
 fn reference() -> Reference {
@@ -39,6 +39,19 @@ fn mutations_keep_radius_and_length_within_range_and_points_finite() {
         assert!((19.0..=81.0).contains(&chord), "{chord}");
         assert!([stroke.path.from, stroke.path.control[0], stroke.path.control[1], stroke.path.to].iter().all(|p| p.x.is_finite() && p.y.is_finite()));
     }
+}
+
+#[test]
+fn contrast_spreads_or_flattens_stroke_lightness() {
+    let sample = |contrast: f32, grey: u8| {
+        let kind = StrokeType { jitter: 0.0, contrast, ..kind() };
+        let reference = Reference::from_rgb8(50, 50, &vec![grey; 50 * 50 * 3]);
+        kind.random(Point { x: 25.0, y: 25.0 }, &reference, &Flow::flat(50, 50), &mut StdRng::seed_from_u64(1)).color.value
+    };
+    assert!((sample(1.0, 191) - 0.75).abs() < 0.01);
+    assert_eq!((sample(0.0, 191), sample(0.0, 40)), (0.5, 0.5));
+    assert_eq!((sample(2.0, 220), sample(2.0, 40)), (1.0, 0.0));
+    assert!(sample(1.5, 191) > 0.8 && sample(1.5, 40) < 0.15);
 }
 
 #[test]

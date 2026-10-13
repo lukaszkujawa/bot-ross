@@ -66,6 +66,7 @@ length = [60, 300]               # required
 bend = [0.0, 0.3]                # control-point offset as a fraction of length; default [0.0, 0.3]
 pressure = "hand"                # "hand" | "flat" | "fading"; default "hand"
 jitter = 0.05                    # colour mutation step; default 0.05
+contrast = 1.0                   # stroke lightness spread around mid grey: 0 flattens every stroke to mid, 2 pushes light strokes to white and dark ones to black; default 1.0
 follow = 0.6                     # 0..1 attraction of stroke direction to contours in the reference; default 0
 opacity = 1.0                    # multiplier on the brush's opacity, for glazing; default 1.0
 aim = [512, 400]                 # optional point in px; with follow, strokes run toward or away from it instead of along contours
@@ -89,6 +90,8 @@ accident = 0.0                   # chance to keep a stroke that does not lower t
 skip = false                     # true leaves the layer out of the painting; default false
 candidates = 8                   # optional per-layer override
 refinements = 1                  # optional per-layer override
+stroke_radius = [5, 12]          # any stroke key prefixed with stroke_ overrides that key of the layer's stroke
+region_weight = 5.0              # likewise region_ for the layer's region
 ```
 
 Each layer is painted on its own transparent layer over everything below, so a painting is built from coarse to fine. A layer's `reference` table changes what it is judged against: `blur` softens the target so broad strokes are scored on masses rather than detail they cannot paint, and stroke colours are sampled from the softened target too; `edges` multiplies the error along contours by one plus that factor so detail layers concentrate on getting edges right. `smooth` runs an edge-preserving filter with that spatial sigma in pixels, which flattens shading and noise inside a surface while keeping real boundaries sharp, the basis of a clean stylised look; `levels` posterises the target into that many tones per channel, and `contrast` and `saturation` scale it around mid grey, for flat, clearly separated planes in a stylised look; blur is applied first, so a small blur before posterising gives clean regions with crisp boundaries. All default to leaving the reference untouched. Stroke colour is sampled from the reference under the stroke and mutated by `jitter` in value and saturation, with a small hue drift. `follow` makes a stroke trace the reference's contours: its direction starts near the local contour tangent and is pulled back toward it at every step along its length, so strokes curve around shapes, with the pull scaled by the value and the local edge strength; flat areas stay random. With `aim` set, the contour field is replaced by straight lines through that point, so strokes lead the eye toward a focus. `placement` decides where strokes start: where the painting is still worst, along edges in the reference, or anywhere.

@@ -1,8 +1,8 @@
-use crate::brush::mark::Mark;
+use crate::mark::Mark;
 use crate::color::Premultiplied;
 use crate::image::Image;
 use crate::layer::Layer;
-use crate::layer::tiles::Bounds;
+use crate::bounds::Bounds;
 use crate::reference::Reference;
 
 const CHANNEL_WEIGHTS: [u32; 3] = [3, 4, 2];

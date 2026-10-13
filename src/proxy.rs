@@ -1,5 +1,5 @@
-use crate::brush::mark::Mark;
-use crate::layer::tiles::Bounds;
+use crate::mark::Mark;
+use crate::bounds::Bounds;
 use crate::stroke::Stroke;
 use serde::Deserialize;
 

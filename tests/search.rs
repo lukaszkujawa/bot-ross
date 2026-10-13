@@ -13,7 +13,7 @@ fn plan(count: usize) -> LayerPlan {
     LayerPlan {
         name: "test".into(),
         brush: "brushes/pen.toml".into(),
-        stroke: StrokeType { radius: [4.0, 10.0], length: [10.0, 40.0], bend: [0.0, 0.2], pressure: PressureShape::Flat, jitter: 0.0, follow: 0.0, opacity: 1.0, aim: None },
+        stroke: StrokeType { radius: [4.0, 10.0], length: [10.0, 40.0], bend: [0.0, 0.2], pressure: PressureShape::Flat, jitter: 0.0, contrast: 1.0, follow: 0.0, opacity: 1.0, aim: None },
         count,
         region: None,
         placement: PlacementMode::Error,

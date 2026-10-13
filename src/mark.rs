@@ -1,6 +1,6 @@
+use crate::bounds::Bounds;
 use crate::color::Premultiplied;
 use crate::layer::Layer;
-use crate::layer::tiles::Bounds;
 
 pub struct Mark {
     bounds: Bounds,

@@ -15,10 +15,7 @@ pub struct Flow {
 impl Flow {
     pub fn of(reference: &Reference) -> Self {
         let (width, height) = (reference.width, reference.height);
-        let luminance = |x: usize, y: usize| {
-            let [r, g, b] = reference.pixel(x, y);
-            r as f32 * 0.3 + g as f32 * 0.5 + b as f32 * 0.2
-        };
+        let luminance = |x: usize, y: usize| reference.luminance(x, y);
         let tensor: Vec<[f32; 3]> = (0..width * height)
             .map(|i| {
                 let (x, y) = (i % width, i / width);

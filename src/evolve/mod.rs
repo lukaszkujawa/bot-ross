@@ -7,7 +7,7 @@ use crate::evolve::progress::Progress;
 use crate::evolve::search::Search;
 use crate::fitness::Fitness;
 use crate::flow::Flow;
-use crate::layer::tiles::Bounds;
+use crate::bounds::Bounds;
 use crate::painting::config::{PlacementMode, SearchConfig};
 use crate::painting::plan::LayerPlan;
 use crate::placement::Placement;
@@ -30,21 +30,8 @@ pub struct Outcome {
 pub fn run_layer(plan: &LayerPlan, search: SearchConfig, canvas: &mut Canvas, reference: &Reference, progress: &mut Progress, rng: &mut impl Rng) -> Result<Outcome, Box<dyn Error>> {
     let mut brush = Brush::load(&plan.brush)?;
     let (width, height) = (canvas.width, canvas.height);
-    let (softened, flattened, graded);
-    let mut target = reference;
-    if plan.reference.blur > 0.0 {
-        softened = target.blurred(plan.reference.blur);
-        target = &softened;
-    }
-    if plan.reference.smooth > 0.0 {
-        flattened = target.smoothed(plan.reference.smooth);
-        target = &flattened;
-    }
-    if plan.reference.grades() {
-        graded = target.graded(plan.reference.contrast, plan.reference.saturation, plan.reference.levels);
-        target = &graded;
-    }
-    let mut fitness = Fitness::new(target, canvas.composite());
+    let target = plan.reference.prepare(reference);
+    let mut fitness = Fitness::new(&target, canvas.composite());
     let edges = (plan.placement == PlacementMode::Edges || plan.reference.edges > 0.0).then(|| reference.edges());
     if plan.region.is_some() || plan.reference.edges > 0.0 {
         fitness.weigh(|x, y| {
@@ -65,7 +52,7 @@ pub fn run_layer(plan: &LayerPlan, search: SearchConfig, canvas: &mut Canvas, re
     let started = Instant::now();
     while outcome.placed < plan.count && outcome.attempts < plan.count * search.patience.max(1) && !progress.stopped {
         outcome.attempts += 1;
-        let (stroke, delta) = searcher.run(placement.pick(rng), &fitness, target, rng);
+        let (stroke, delta) = searcher.run(placement.pick(rng), &fitness, &target, rng);
         let forgiven = plan.accident > 0.0 && rng.random_range(0.0..1.0) < plan.accident;
         if delta >= 0 && !forgiven {
             continue;

@@ -1,5 +1,5 @@
 use crate::fitness::Fitness;
-use crate::layer::tiles::Bounds;
+use crate::bounds::Bounds;
 use crate::painting::config::PlacementMode;
 use crate::stroke::Point;
 use rand::{Rng, RngExt};

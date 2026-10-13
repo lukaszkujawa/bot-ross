@@ -1,8 +1,8 @@
-use bot_ross::brush::bristles::Sample;
+use bot_ross::mypaint::engine::Sample;
 use bot_ross::canvas::Canvas;
 use bot_ross::color::{Hsv, Premultiplied};
 use bot_ross::layer::Layer;
-use bot_ross::layer::tiles::Bounds;
+use bot_ross::bounds::Bounds;
 use bot_ross::mypaint::engine::Engine;
 use bot_ross::stroke::Point;
 

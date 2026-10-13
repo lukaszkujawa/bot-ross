@@ -1,5 +1,5 @@
 use crate::layer::Layer;
-use crate::layer::tiles::Bounds;
+use crate::bounds::Bounds;
 use crate::proxy::{Proxy, ribbon};
 use crate::stroke::Stroke;
 use serde::Deserialize;

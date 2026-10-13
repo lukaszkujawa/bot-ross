@@ -58,6 +58,8 @@ fn invalid_values_are_rejected_with_messages() {
     assert!(parse(&BASE.replace("radius = [10, 30]", "radius = [30, 10]")).unwrap_err().contains("radius must be [min, max]"));
     assert!(parse(&BASE.replace("length = [60, 300]", "length = [60, 300], jitter = 2")).unwrap_err().contains("jitter must be between 0 and 1"));
     assert!(parse(&BASE.replace("count = 10", "count = 10\nradious = 3")).is_err());
+    assert!(parse(&BASE.replace("length = [60, 300]", "length = [60, 300], contrast = -0.5")).unwrap_err().contains("contrast must not be negative"));
+    assert_eq!(parse(&BASE.replace("count = 10", "count = 10\nstroke_contrast = 1.5")).unwrap().layers[0].stroke.contrast, 1.5);
     assert!(parse(&BASE.replace("count = 10", "count = 10\nreference = { blur = -1 }")).unwrap_err().contains("must not be negative"));
     assert!(parse(&BASE.replace("count = 10", "count = 10\naccident = 1.5")).unwrap_err().contains("accident must be between 0 and 1"));
     assert_eq!(parse(&BASE.replace("count = 10", "count = 10\naccident = 0.2")).unwrap().layers[0].accident, 0.2);
@@ -80,6 +82,21 @@ fn inline_definitions_and_per_layer_overrides_work() {
     assert_eq!(aimed.layers[0].stroke.aim, Some([50.0, 60.0]));
     assert_eq!(plan.layers[0].stroke.length, [5.0, 9.0]);
     assert_eq!((plan.layers[0].candidates, plan.layers[0].refinements), (4, 3));
+}
+
+#[test]
+fn prefixed_keys_override_single_stroke_and_region_fields() {
+    let plan = parse(&BASE.replace("count = 10", "count = 10\nregion = \"face\"\nstroke_radius = [1, 2]\nstroke_pressure = \"flat\"\nregion_weight = 9")).unwrap();
+    let stroke = &plan.layers[0].stroke;
+    assert_eq!((stroke.radius, stroke.length, stroke.pressure), ([1.0, 2.0], [60.0, 300.0], PressureShape::Flat));
+    let region = plan.layers[0].region.unwrap();
+    assert_eq!((region.weight, region.radius), (9.0, 50.0));
+    let inline = parse(&BASE.replace("stroke = \"bold\"", "stroke = { radius = [1, 2], length = [5, 9] }\nstroke_length = [7, 8]")).unwrap();
+    assert_eq!(inline.layers[0].stroke.length, [7.0, 8.0]);
+    assert!(parse(&BASE.replace("count = 10", "count = 10\nstroke_radius = [5, 1]")).unwrap_err().contains("radius must be [min, max]"));
+    assert!(parse(&BASE.replace("count = 10", "count = 10\nstroke_radious = [1, 2]")).unwrap_err().contains("unknown field `radious`"));
+    assert!(parse(&BASE.replace("count = 10", "count = 10\nregion_weight = 2")).unwrap_err().contains("region_weight needs a region"));
+    assert!(parse(&BASE.replace("count = 10", "count = 10\nradious = 3")).unwrap_err().contains("unknown key \"radious\""));
 }
 
 #[test]

@@ -1,11 +1,11 @@
 use crate::brush::field::Field;
-use crate::brush::mark::Mark;
+use crate::mark::Mark;
 use crate::brush::paint::Paint;
 use crate::brush::tip::Tip;
 use crate::brush::walk::Walk;
 use crate::color::{OPAQUE, Premultiplied};
 use crate::layer::Layer;
-use crate::layer::tiles::Bounds;
+use crate::bounds::Bounds;
 use crate::stroke::{Point, Stroke};
 use rand::{Rng, RngExt};
 use serde::Deserialize;

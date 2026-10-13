@@ -1,5 +1,7 @@
 use crate::painting::config::{LayerConfig, Named, OutputConfig, Painting, PlacementMode, Region, SearchConfig, Target};
 use crate::painting::stroke_type::StrokeType;
+use serde::Serialize;
+use serde::de::DeserializeOwned;
 use std::collections::BTreeMap;
 use std::error::Error;
 use std::fs;
@@ -68,8 +70,16 @@ fn resolve(index: usize, layer: &LayerConfig, painting: &Painting, base: &Path, 
     let label = format!("layer {index} \"{}\"", layer.name);
     let mut report = |problem: String| problems.push(format!("{label}: {problem}"));
     let brush = lookup(&layer.brush, &painting.brushes, "brush", "brushes").map_err(&mut report).ok();
-    let stroke = lookup(&layer.stroke, &painting.strokes, "stroke", "strokes").map_err(&mut report).ok().cloned();
-    let region = layer.region.as_ref().and_then(|named| lookup(named, &painting.regions, "region", "regions").map_err(&mut report).ok().copied());
+    let stroke = lookup(&layer.stroke, &painting.strokes, "stroke", "strokes").and_then(|stroke| overridden(stroke, &layer.overrides, "stroke_")).map_err(&mut report).ok();
+    let region = layer.region.as_ref().and_then(|named| lookup(named, &painting.regions, "region", "regions").and_then(|region| overridden(region, &layer.overrides, "region_")).map_err(&mut report).ok());
+    for key in layer.overrides.keys() {
+        match key.split_once('_') {
+            Some(("stroke", _)) => {}
+            Some(("region", _)) if layer.region.is_some() => {}
+            Some(("region", _)) => report(format!("{key} needs a region")),
+            _ => report(format!("unknown key \"{key}\"")),
+        }
+    }
     if layer.count == 0 {
         report("count must be greater than 0".into());
     }
@@ -104,6 +114,16 @@ fn resolve(index: usize, layer: &LayerConfig, painting: &Painting, base: &Path, 
         candidates: layer.candidates.unwrap_or(painting.search.candidates),
         refinements: layer.refinements.unwrap_or(painting.search.refinements),
     })
+}
+
+fn overridden<T: Serialize + DeserializeOwned>(value: &T, overrides: &BTreeMap<String, toml::Value>, prefix: &str) -> Result<T, String> {
+    let mut table = toml::Table::try_from(value).map_err(|e| e.to_string())?;
+    for (key, value) in overrides {
+        if let Some(field) = key.strip_prefix(prefix) {
+            table.insert(field.to_string(), value.clone());
+        }
+    }
+    table.try_into().map_err(|e: toml::de::Error| e.to_string())
 }
 
 fn lookup<'a, T>(named: &'a Named<T>, table: &'a BTreeMap<String, T>, kind: &str, plural: &str) -> Result<&'a T, String> {

@@ -1,8 +1,8 @@
-use bot_ross::brush::mark::Mark;
+use bot_ross::mark::Mark;
 use bot_ross::color::{Hsv, Premultiplied};
 use bot_ross::fitness::Fitness;
 use bot_ross::layer::Layer;
-use bot_ross::layer::tiles::Bounds;
+use bot_ross::bounds::Bounds;
 use bot_ross::proxy::{Proxy, ribbon};
 use bot_ross::reference::Reference;
 use bot_ross::stroke::{Curve, Point, Pressure, Stroke};

@@ -40,6 +40,8 @@ deep_1 = { radius = [0.6, 1.0], length = [25, 50], bend = [0.0, 0.03], angle = [
 deep_2 = { radius = [0.6, 1.0], length = [25, 50], bend = [0.0, 0.03], angle = [130, 140], palette = ["#1e1e22"], opacity = 0.85 }
 deep_3 = { radius = [0.7, 1.1], length = [20, 40], bend = [0.0, 0.03], angle = [-5, 5], palette = ["#161618"], opacity = 0.9 }
 deep_4 = { radius = [0.8, 1.2], length = [15, 35], bend = [0.0, 0.03], angle = [85, 95], palette = ["#101012"], opacity = 0.95 }
+contour = { contrast=1.8, radius = [0.6, 0.9], length = [20, 140], bend = [0.0, 0.2], pressure = "flat", jitter = 0.0, follow = 1, opacity=1 }
+
 
 [[layers]]
 name = "tone"
@@ -147,7 +149,7 @@ blend = "multiply"
 brush = "pencil"
 stroke = "shadow"
 placement = "fill"
-spacing = 5
+spacing = 2
 scatter = 0.25
 region = "sphere_shadow"
 
@@ -200,3 +202,12 @@ placement = "fill"
 spacing = 3
 scatter = 0.2
 region = "deep_4"
+
+
+[[layers]]
+name = "contours"
+brush = "pencil"
+stroke = "contour"
+count = 1500
+placement = "edges"
+reference = { smooth = 8, edges = 16.0, saturation = 0, gamma=1.6 }

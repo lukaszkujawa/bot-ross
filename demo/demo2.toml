@@ -1,52 +1,46 @@
-[canvas]
-background = "white"
-
 [search]
-candidates = 8
+candidates = 6
 refinements = 2
 
+
 [brushes]
-water = { file = "../brushes/watercolour.toml" }
-wet = { file = "../brushes/watercolour_wet.toml" }
+air = { file = "../brushes/airbrush.toml" }
 round = { file = "../brushes/soft_round.toml" }
-liner = { file = "../brushes/liner.toml" }
 pen = { file = "../brushes/pen.toml" }
+liner = { file = "../brushes/liner.toml" }
 
 [strokes]
-flood = { radius = [70, 140], length = [150, 400], bend = [0.1, 0.4], pressure = "hand", jitter = 0.15, saturation = 0.6, opacity = 0.35 }
-bleed = { radius = [20, 40], length = [10, 200], bend = [0.0, 0.3], pressure = "hand", jitter = 0.1, saturation = 0.8, opacity = 0.8, follow = 0.9 }
-detail = { radius = [2, 10], length = [5, 30], bend = [0.0, 0.05], pressure = "hand", jitter = 0.1, follow = 0.9, opacity = 0.9 }
-detail2 = { contrast = 1.8, radius = [0.3, 0.8], length = [5, 30], bend = [0.0, 0.05], pressure = "hand", jitter = 0.1, follow = 0.9, opacity = 0.9 }
+hairline = { radius = [0.8, 1.2], length = [100, 1000], bend = [0.0, 0.15],  pressure = "hand", jitter = 0.1, aim = [384, 512], follow = 0.1 }
+
+
+[regions]
+face = { centre = [400, 350], radius = 250, weight = 2.0, outside = 0.05, feather = 0.4 }
 
 [[layers]]
-name = "floods"
-blend = "multiply"
-brush = "wet"
-stroke = "flood"
-count = 100
-accident = 0.4
-reference = { blur = 30, saturation = 0.5 }
-
-[[layers]]
-name = "form"
-brush = "water"
-stroke = "bleed"
-count = 1000
+name = "ground"
+brush = "liner"
+stroke = "hairline"
+count = 4000
 accident = 0.1
-reference = { blur = 10, edges = 4 }
+
+[[layers]]
+name = "face"
+count = 3000
+brush = "liner"
+region = "face"
+stroke = "hairline"
+stroke_length = [5, 300]
+stroke_radius = [0.1, 0.3]
+accident = 0.1
 
 [[layers]]
 name = "details"
-brush = "pen"
-stroke = "detail"
-count = 2000
-accident = 0.05
-reference = { edges = 8 }
+brush = "liner"
+stroke = { contrast=1.1, radius = [0.1, 0.3], length = [8, 60], bend = [0.0, 0.15], pressure = "flat", jitter = 0.0, follow = 0.9 }
+count = 1200
+region = "face"
+region_radius = 100
+placement = "edges"
+reference = { smooth = 2, edges = 14.0 }
+accident = 0.1
 
-[[layers]]
-name = "details 2"
-brush = "pen"
-stroke = "detail2"
-count = 2000
-accident = 0.05
-reference = { edges = 4 }

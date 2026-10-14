@@ -30,6 +30,21 @@ impl Curve {
         Self { from, control: [from.lerp(to, 1.0 / 3.0), from.lerp(to, 2.0 / 3.0)], to }
     }
 
+    pub fn across(point: Point, heading: f32, margin: f32, [width, height]: [f32; 2]) -> Self {
+        let point = Point { x: point.x.clamp(0.0, width), y: point.y.clamp(0.0, height) };
+        let (dy, dx) = heading.sin_cos();
+        let slab = |position: f32, direction: f32, extent: f32| {
+            if direction.abs() < f32::EPSILON {
+                return [f32::NEG_INFINITY, f32::INFINITY];
+            }
+            let [a, b] = [(-margin - position) / direction, (extent + margin - position) / direction];
+            [a.min(b), a.max(b)]
+        };
+        let ([x0, x1], [y0, y1]) = (slab(point.x, dx, width), slab(point.y, dy, height));
+        let at = |t: f32| Point { x: point.x + dx * t, y: point.y + dy * t };
+        Self::line(at(x0.max(y0)), at(x1.min(y1)))
+    }
+
     pub fn at(&self, t: f32) -> Point {
         let [a, b] = self.control;
         let (ab, bc, cd) = (self.from.lerp(a, t), a.lerp(b, t), b.lerp(self.to, t));

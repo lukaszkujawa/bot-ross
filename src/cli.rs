@@ -17,4 +17,8 @@ pub struct Cli {
     pub layers: Vec<String>,
     #[arg(long)]
     pub headless: bool,
+    #[arg(long)]
+    pub video: Option<PathBuf>,
+    #[arg(long, default_value_t = 1)]
+    pub video_step: usize,
 }

@@ -4,6 +4,7 @@ use bot_ross::evolve::progress::Progress;
 use bot_ross::flow::Flow;
 use bot_ross::lattice::{Grain, lattice};
 use bot_ross::painter::paint_layer;
+use bot_ross::painting::length::Length;
 use bot_ross::painting::config::{OutputConfig, PlacementMode, Target};
 use bot_ross::painting::plan::{LayerPlan, Marks, Plan};
 use bot_ross::painting::stroke_type::{PressureShape, StrokeType};
@@ -15,24 +16,28 @@ use rand::rngs::StdRng;
 use std::path::Path;
 
 fn stroke(angle: Option<Span>) -> StrokeType {
-    StrokeType { radius: [1.0, 2.0], length: [10.0, 10.0], bend: [0.0, 0.0], pressure: PressureShape::Flat, jitter: 0.0, contrast: 1.0, saturation: 1.0, value: 1.0, palette: vec![], follow: 0.0, opacity: 1.0, aim: None, angle, length_bias: 0.5 }
+    StrokeType { radius: [1.0, 2.0], length: Length::Range([10.0, 10.0]), bend: [0.0, 0.0], pressure: PressureShape::Flat, jitter: 0.0, contrast: 1.0, saturation: 1.0, value: 1.0, palette: vec![], follow: 0.0, opacity: 1.0, aim: None, angle, length_bias: 0.5 }
 }
 
 #[test]
-fn lattice_tiles_the_canvas_once_per_cell_and_thins_with_coverage() {
+fn lattice_rows_run_from_edge_to_edge_and_thin_with_coverage() {
     let mut rng = StdRng::seed_from_u64(1);
-    let points = lattice(100, 100, 10.0, Grain { angle: 0.0, along: 10.0 }, 0.0, |_| 1.0, &mut rng);
-    assert_eq!(points.len(), 100);
-    let mut cells: Vec<(usize, usize)> = points.iter().map(|p| ((p.x / 10.0) as usize, (p.y / 10.0) as usize)).collect();
-    cells.sort();
-    cells.dedup();
-    assert_eq!(cells.len(), 100);
-    let half = lattice(100, 100, 10.0, Grain { angle: 0.0, along: 10.0 }, 0.0, |p| if p.x < 50.0 { 1.0 } else { 0.0 }, &mut rng);
-    assert_eq!(half.len(), 50);
-    assert!(half.iter().all(|p| p.x < 50.0));
-    let angled = lattice(100, 60, 8.0, Grain { angle: 45f32.to_radians(), along: 20.0 }, 0.5, |_| 1.0, &mut rng);
+    let points = lattice(100, 100, 10.0, Grain { angle: 0.0, along: Some(10.0) }, 0.0, |_| 1.0, &mut rng);
+    for row in 0..10 {
+        let mut starts: Vec<f32> = points.iter().filter(|p| (p.y / 10.0) as usize == row).map(|p| p.x).collect();
+        starts.sort_by(|a, b| a.total_cmp(b));
+        assert!(starts[0] <= 0.0 && starts[starts.len() - 1] + 10.0 >= 100.0, "{starts:?}");
+        assert!(starts.windows(2).all(|pair| (pair[1] - pair[0] - 10.0).abs() < 1e-3), "{starts:?}");
+    }
+    let half = lattice(100, 100, 10.0, Grain { angle: 0.0, along: Some(10.0) }, 0.0, |p| if p.x < 50.0 { 1.0 } else { 0.0 }, &mut rng);
+    assert!((50..=60).contains(&half.len()) && half.iter().all(|p| p.x < 50.0), "{}", half.len());
+    let angled = lattice(100, 60, 8.0, Grain { angle: 45f32.to_radians(), along: Some(20.0) }, 0.5, |_| 1.0, &mut rng);
     assert!(angled.len() > 20, "{}", angled.len());
-    assert!(angled.iter().all(|p| (0.0..100.0).contains(&p.x) && (0.0..60.0).contains(&p.y)));
+    let on_canvas = |p: Point| (0.0..100.0).contains(&p.x) && (0.0..60.0).contains(&p.y);
+    let (sin, cos) = 45f32.to_radians().sin_cos();
+    assert!(angled.iter().all(|p| on_canvas(*p) || on_canvas(Point { x: p.x + 20.0 * cos, y: p.y + 20.0 * sin })));
+    let full = lattice(100, 60, 8.0, Grain { angle: 45f32.to_radians(), along: None }, 0.0, |_| 1.0, &mut rng);
+    assert!(full.len() > 10 && full.iter().all(|p| on_canvas(*p)), "{full:?}");
 }
 
 #[test]
@@ -72,7 +77,7 @@ fn fill_layers_paint_every_lattice_point_without_searching() {
     };
     let outcome = paint_layer(&plan, &mut canvas, &reference, &mut progress, &mut StdRng::seed_from_u64(1)).unwrap();
     assert_eq!((outcome.placed, outcome.rejected), (outcome.attempts, 0), "{outcome:?}");
-    assert!((36..=40).contains(&outcome.placed), "{outcome:?}");
+    assert!((40..=44).contains(&outcome.placed), "{outcome:?}");
     let capped = paint_layer(&LayerPlan { count: 7, ..plan }, &mut canvas, &reference, &mut progress, &mut StdRng::seed_from_u64(1)).unwrap();
     assert_eq!(capped.placed, 7);
 }

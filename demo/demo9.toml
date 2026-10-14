@@ -5,20 +5,40 @@ refinements = 2
 [brushes]
 air = { file = "../brushes/airbrush.toml" }
 pen = { file = "../brushes/pen.toml" }
+wet = { file = "../brushes/watercolour_wet.toml" }
 
 [regions]
 everything = { select = [{ rectangle = { from = [0, 0], to = [1, 1] } }], relative = true, feather = 0 }
 
 
 [strokes]
-stroke1 = { radius = [10, 70], angle = 0, length = [500, 1200], bend = [0, 0], pressure = "flat", jitter = 0 }
+stroke1 = { radius = [30, 290], angle = 0, length = "full", bend = [0, 0], pressure = "hand", jitter = 0.1, opacity = 0.3 }
+stroke2 = { aim = [361, 312], radius = [0.1, 1], length = [10, 100], bend = [0, 0.1], pressure = "hand", jitter = 0.1, opacity = 0.8, follow = 0.9 }
 
 
 [[layers]]
 name = "backdrop"
-brush = "pen"
+brush = "wet"
 region = "everything"
 stroke = "stroke1"
-count = 100
-spacing = 20
+count = 20
 reference = { blur = 8 }
+
+
+[[layers]]
+name = "backdrop 2"
+brush = "air"
+region = "everything"
+stroke = "stroke1"
+stroke_opacity = 0.8
+count = 100
+reference = { blur = 8 }
+
+
+[[layers]]
+name = "lines"
+brush = "pen"
+count = 20000
+placement = "edges"
+stroke = "stroke2"
+reference = { edges = 8 }

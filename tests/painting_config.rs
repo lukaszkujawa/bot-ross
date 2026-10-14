@@ -2,6 +2,7 @@ use bot_ross::color::Blend;
 use bot_ross::painting::config::{PlacementMode, Target};
 use bot_ross::painting::plan::{LayerPlan, Marks, Plan};
 use bot_ross::painting::shape_type::{Points, ShapeType};
+use bot_ross::painting::length::{Full, Length};
 use bot_ross::painting::stroke_type::{PressureShape, StrokeType};
 use bot_ross::reference::Reference;
 use bot_ross::shape::fill::{Fill, Span};
@@ -102,7 +103,7 @@ fn inline_definitions_and_per_layer_overrides_work() {
     assert!(stroke(&plan.layers[0]).0.ends_with("pen.toml"));
     let aimed = parse(&BASE.replace("stroke = \"bold\"", "stroke = { radius = [1, 2], length = [5, 9], aim = [50, 60], follow = 0.8 }")).unwrap();
     assert_eq!(stroke(&aimed.layers[0]).1.aim, Some([50.0, 60.0]));
-    assert_eq!(stroke(&plan.layers[0]).1.length, [5.0, 9.0]);
+    assert_eq!(stroke(&plan.layers[0]).1.length, Length::Range([5.0, 9.0]));
     assert_eq!((plan.layers[0].candidates, plan.layers[0].refinements), (4, 3));
 }
 
@@ -110,11 +111,13 @@ fn inline_definitions_and_per_layer_overrides_work() {
 fn prefixed_keys_override_single_stroke_and_region_fields() {
     let plan = parse(&BASE.replace("count = 10", "count = 10\nregion = \"face\"\nstroke_radius = [1, 2]\nstroke_pressure = \"flat\"\nregion_weight = 9")).unwrap();
     let kind = stroke(&plan.layers[0]).1;
-    assert_eq!((kind.radius, kind.length, kind.pressure), ([1.0, 2.0], [60.0, 300.0], PressureShape::Flat));
+    assert_eq!((kind.radius, kind.length, kind.pressure), ([1.0, 2.0], Length::Range([60.0, 300.0]), PressureShape::Flat));
     let region = plan.layers[0].region.as_ref().unwrap();
     assert_eq!((region.weight, region.radius), (9.0, Some(50.0)));
     let inline = parse(&BASE.replace("stroke = \"bold\"", "stroke = { radius = [1, 2], length = [5, 9] }\nstroke_length = [7, 8]")).unwrap();
-    assert_eq!(stroke(&inline.layers[0]).1.length, [7.0, 8.0]);
+    assert_eq!(stroke(&inline.layers[0]).1.length, Length::Range([7.0, 8.0]));
+    let full = parse(&BASE.replace("count = 10", "count = 10\nstroke_length = \"full\"")).unwrap();
+    assert_eq!(stroke(&full.layers[0]).1.length, Length::Full(Full::Full));
     assert!(parse(&BASE.replace("count = 10", "count = 10\nstroke_radius = [5, 1]")).unwrap_err().contains("radius must be [min, max]"));
     assert!(parse(&BASE.replace("count = 10", "count = 10\nstroke_radious = [1, 2]")).unwrap_err().contains("unknown field `radious`"));
     assert!(parse(&BASE.replace("count = 10", "count = 10\nregion_weight = 2")).unwrap_err().contains("region_weight needs a region"));

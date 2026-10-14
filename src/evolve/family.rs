@@ -15,4 +15,5 @@ pub trait Family: Sync {
     fn reach(&self, candidate: &Self::Candidate, width: usize, height: usize) -> Bounds;
     fn largest_area(&self) -> f32;
     fn grain(&self, spacing: f32) -> Grain;
+    fn passing(&self, point: Point, target: &Reference, rng: &mut impl Rng) -> Self::Candidate;
 }

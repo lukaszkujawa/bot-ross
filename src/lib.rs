@@ -21,4 +21,5 @@ pub mod reference;
 pub mod shape;
 pub mod sketch;
 pub mod stroke;
+pub mod video;
 pub mod window;

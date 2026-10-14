@@ -15,7 +15,10 @@ pub fn png_bytes(image: &Image) -> Result<Vec<u8>, Box<dyn Error>> {
     Ok(encoded.into_inner())
 }
 
+pub fn rgb_bytes(image: &Image) -> Vec<u8> {
+    image.argb.iter().flat_map(|px| [(px >> 16) as u8, (px >> 8) as u8, *px as u8]).collect()
+}
+
 fn rgb_image(image: &Image) -> Result<RgbImage, Box<dyn Error>> {
-    let bytes: Vec<u8> = image.argb.iter().flat_map(|px| [(px >> 16) as u8, (px >> 8) as u8, *px as u8]).collect();
-    Ok(RgbImage::from_raw(image.width as u32, image.height as u32, bytes).ok_or("image size mismatch")?)
+    Ok(RgbImage::from_raw(image.width as u32, image.height as u32, rgb_bytes(image)).ok_or("image size mismatch")?)
 }

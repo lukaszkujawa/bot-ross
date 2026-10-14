@@ -2,6 +2,7 @@ use bot_ross::canvas::Canvas;
 use bot_ross::color::{Blend, Premultiplied};
 use bot_ross::evolve::progress::Progress;
 use bot_ross::painter::paint_layer;
+use bot_ross::painting::length::Length;
 use bot_ross::painting::config::{OutputConfig, PlacementMode, Target};
 use bot_ross::painting::plan::{LayerPlan, Marks};
 use bot_ross::painting::shape_type::{Points, ShapeType};
@@ -14,7 +15,7 @@ use rand::rngs::StdRng;
 fn plan(count: usize) -> LayerPlan {
     LayerPlan {
         name: "test".into(),
-        marks: Marks::Strokes { brush: "brushes/pen.toml".into(), kind: StrokeType { radius: [4.0, 10.0], length: [10.0, 40.0], bend: [0.0, 0.2], pressure: PressureShape::Flat, jitter: 0.0, contrast: 1.0, saturation: 1.0, value: 1.0, palette: vec![], follow: 0.0, opacity: 1.0, aim: None, angle: None, length_bias: 0.5 } },
+        marks: Marks::Strokes { brush: "brushes/pen.toml".into(), kind: StrokeType { radius: [4.0, 10.0], length: Length::Range([10.0, 40.0]), bend: [0.0, 0.2], pressure: PressureShape::Flat, jitter: 0.0, contrast: 1.0, saturation: 1.0, value: 1.0, palette: vec![], follow: 0.0, opacity: 1.0, aim: None, angle: None, length_bias: 0.5 } },
         count,
         spacing: 0.0,
         scatter: 0.0,

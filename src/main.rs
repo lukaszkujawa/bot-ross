@@ -5,6 +5,7 @@ use bot_ross::output::save_image;
 use bot_ross::painter::{background, paint};
 use bot_ross::painting::plan::Plan;
 use bot_ross::reference::Reference;
+use bot_ross::video::Recorder;
 use bot_ross::window::Window;
 use clap::Parser;
 use std::error::Error;
@@ -20,7 +21,13 @@ fn main() -> Result<(), Box<dyn Error>> {
     println!("{}x{}, {} layers", reference.width, reference.height, plan.layers.len());
     {
         let mut progress = Progress::new(window.as_mut(), &plan.output);
+        if let Some(path) = &cli.video {
+            progress = progress.recording(Recorder::start(path, reference.width, reference.height)?, cli.video_step);
+        }
         paint(&plan, &reference, &mut canvas, &mut progress, cli.seed.unwrap_or(plan.search.seed))?;
+        if let (Some(frames), Some(path)) = (progress.finish(&canvas.render())?, &cli.video) {
+            println!("{frames} frames in {}", path.display());
+        }
     }
     let image = canvas.render();
     if let Some(out) = &cli.out {

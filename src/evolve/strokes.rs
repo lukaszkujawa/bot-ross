@@ -16,6 +16,7 @@ pub struct Strokes<'a> {
     kind: &'a StrokeType,
     flow: Flow,
     proxy: Proxy,
+    canvas: [f32; 2],
 }
 
 impl<'a> Strokes<'a> {
@@ -26,7 +27,7 @@ impl<'a> Strokes<'a> {
             None if kind.follow > 0.0 => Flow::of(reference),
             None => Flow::flat(width, height),
         };
-        Self { kind, flow, proxy }
+        Self { kind, flow, proxy, canvas: [width as f32, height as f32] }
     }
 }
 
@@ -38,7 +39,7 @@ impl Family for Strokes<'_> {
     }
 
     fn mutate(&self, parent: &Stroke, rng: &mut impl Rng) -> Stroke {
-        self.kind.mutate(parent, rng)
+        self.kind.mutate(parent, self.canvas, rng)
     }
 
     fn proxy(&self, stroke: &Stroke, fitness: &Fitness) -> Mark {
@@ -51,13 +52,17 @@ impl Family for Strokes<'_> {
     }
 
     fn largest_area(&self) -> f32 {
-        self.kind.radius[1] * self.kind.length[1]
+        self.kind.radius[1] * self.kind.length.longest(self.canvas)
     }
 
     fn grain(&self, spacing: f32) -> Grain {
         match self.kind.angle {
             Some(span) => Grain { angle: span.range().iter().sum::<f32>().to_radians() / 2.0, along: self.kind.typical_length() },
-            None => Grain { angle: 0.0, along: spacing },
+            None => Grain { angle: 0.0, along: Some(spacing) },
         }
+    }
+
+    fn passing(&self, point: Point, target: &Reference, rng: &mut impl Rng) -> Stroke {
+        self.kind.passing(point, target, &self.flow, rng)
     }
 }

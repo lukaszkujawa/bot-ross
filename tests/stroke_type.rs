@@ -1,14 +1,15 @@
 use bot_ross::color::Swatch;
 use bot_ross::flow::Flow;
+use bot_ross::painting::length::{Full, Length};
 use bot_ross::painting::stroke_type::{PressureShape, StrokeType};
 use bot_ross::reference::Reference;
 use bot_ross::shape::fill::Span;
-use bot_ross::stroke::Point;
+use bot_ross::stroke::{Curve, Point};
 use rand::SeedableRng;
 use rand::rngs::StdRng;
 
 fn kind() -> StrokeType {
-    StrokeType { radius: [4.0, 9.0], length: [20.0, 80.0], bend: [0.0, 0.3], pressure: PressureShape::Hand, jitter: 0.1, contrast: 1.0, saturation: 1.0, value: 1.0, palette: vec![], follow: 0.0, opacity: 1.0, aim: None, angle: None, length_bias: 0.5 }
+    StrokeType { radius: [4.0, 9.0], length: Length::Range([20.0, 80.0]), bend: [0.0, 0.3], pressure: PressureShape::Hand, jitter: 0.1, contrast: 1.0, saturation: 1.0, value: 1.0, palette: vec![], follow: 0.0, opacity: 1.0, aim: None, angle: None, length_bias: 0.5 }
 }
 
 fn reference() -> Reference {
@@ -27,6 +28,20 @@ fn random_strokes_stay_within_the_type_ranges() {
         assert!((stroke.color.value - 0.5).abs() <= 0.11);
         assert!(stroke.pressure.at(0.0) < 0.5 && stroke.pressure.at(0.5) == 1.0);
     }
+}
+
+#[test]
+fn passing_strokes_cross_the_point_and_start_at_most_one_radius_outside_the_canvas() {
+    let (kind, reference) = (StrokeType { angle: Some(Span::Fixed(0.0)), bend: [0.0, 0.0], ..kind() }, reference());
+    let mut rng = StdRng::seed_from_u64(7);
+    let mut starts = Vec::new();
+    for _ in 0..200 {
+        let stroke = kind.passing(Point { x: 10.0, y: 100.0 }, &reference, &Flow::flat(200, 200), &mut rng);
+        let (from, to) = (stroke.path.from, stroke.path.to);
+        assert!(from.x >= -stroke.radius - 1e-3 && from.x <= 10.0 && to.x >= 10.0, "{from:?} {to:?}");
+        starts.push(from.x);
+    }
+    assert!(starts.iter().filter(|x| **x < 0.0).count() > 100);
 }
 
 #[test]
@@ -52,7 +67,7 @@ fn mutations_keep_radius_and_length_within_range_and_points_finite() {
     let mut rng = StdRng::seed_from_u64(4);
     let mut stroke = kind.random(Point { x: 100.0, y: 100.0 }, &reference, &Flow::flat(200, 200), &mut rng);
     for _ in 0..2000 {
-        stroke = kind.mutate(&stroke, &mut rng);
+        stroke = kind.mutate(&stroke, [200.0, 200.0], &mut rng);
         assert!((4.0..=9.0).contains(&stroke.radius));
         let chord = stroke.path.from.distance(stroke.path.to);
         assert!((19.0..=81.0).contains(&chord), "{chord}");
@@ -66,7 +81,7 @@ fn mutations_keep_the_heading_within_the_angle_span() {
     let mut rng = StdRng::seed_from_u64(6);
     let mut stroke = kind.random(Point { x: 100.0, y: 100.0 }, &reference, &Flow::flat(200, 200), &mut rng);
     for _ in 0..2000 {
-        stroke = kind.mutate(&stroke, &mut rng);
+        stroke = kind.mutate(&stroke, [200.0, 200.0], &mut rng);
         let heading = (stroke.path.to.y - stroke.path.from.y).atan2(stroke.path.to.x - stroke.path.from.x).to_degrees();
         assert!((-10.01..=10.01).contains(&heading), "{heading}");
     }
@@ -168,7 +183,7 @@ fn followed_strokes_trace_a_curved_contour() {
     }
     let reference = Reference::from_rgb8(300, 300, &bytes);
     let flow = Flow::of(&reference);
-    let locked = StrokeType { follow: 1.0, length: [150.0, 150.0], bend: [0.0, 0.0], ..kind() };
+    let locked = StrokeType { follow: 1.0, length: Length::Range([150.0, 150.0]), bend: [0.0, 0.0], ..kind() };
     let mut rng = StdRng::seed_from_u64(8);
     for _ in 0..20 {
         let stroke = locked.random(Point { x: 250.0, y: 150.0 }, &reference, &flow, &mut rng);
@@ -203,4 +218,31 @@ fn aimed_strokes_point_at_the_target() {
         let stroke = aimed.random(Point { x: 20.0, y: 100.0 }, &reference(), &flow, &mut rng);
         assert!((stroke.path.to.y - 100.0).abs() < 1e-3, "{:?}", stroke.path.to);
     }
+}
+
+#[test]
+fn full_strokes_run_from_edge_to_edge_through_the_point() {
+    let reference = Reference::from_rgb8(300, 200, &vec![128; 300 * 200 * 3]);
+    let flow = Flow::flat(300, 200);
+    let mut rng = StdRng::seed_from_u64(8);
+    for angle in [0.0, 30.0, 90.0, 135.0, 180.0] {
+        let kind = StrokeType { angle: Some(Span::Fixed(angle)), length: Length::Full(Full::Full), ..kind() };
+        let mut stroke = kind.passing(Point { x: 120.0, y: 70.0 }, &reference, &flow, &mut rng);
+        for _ in 0..50 {
+            let (from, to, r) = (stroke.path.from, stroke.path.to, stroke.radius);
+            let on_margin = |p: Point| [(p.x + r).abs(), (p.x - 300.0 - r).abs(), (p.y + r).abs(), (p.y - 200.0 - r).abs()].iter().any(|d| *d < 0.01);
+            assert!(on_margin(from) && on_margin(to), "{angle}: {from:?} {to:?}");
+            let heading = (to.y - from.y).atan2(to.x - from.x).to_degrees().rem_euclid(360.0);
+            assert!((heading - angle).abs() < 0.01, "{angle}: {heading}");
+            stroke = kind.mutate(&stroke, [300.0, 200.0], &mut rng);
+        }
+    }
+}
+
+#[test]
+fn across_cuts_a_line_to_the_canvas_plus_margin() {
+    let line = Curve::across(Point { x: 50.0, y: 20.0 }, 0.0, 5.0, [100.0, 40.0]);
+    assert_eq!((line.from, line.to), (Point { x: -5.0, y: 20.0 }, Point { x: 105.0, y: 20.0 }));
+    let diagonal = Curve::across(Point { x: 0.0, y: 0.0 }, 45f32.to_radians(), 0.0, [40.0, 40.0]);
+    assert!(diagonal.from.distance(Point { x: 0.0, y: 0.0 }) < 0.01 && diagonal.to.distance(Point { x: 40.0, y: 40.0 }) < 0.01, "{diagonal:?}");
 }

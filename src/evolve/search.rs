@@ -17,7 +17,7 @@ pub struct Search<'a, F: Family> {
 
 impl<F: Family> Search<'_, F> {
     pub fn run(&self, start: Point, fitness: &Fitness, target: &Reference, rng: &mut impl Rng) -> (F::Candidate, i64) {
-        let mut best = self.round(fitness, rng, |seed| self.family.random(start, target, &mut StdRng::seed_from_u64(seed)));
+        let mut best = self.round(fitness, rng, |seed| self.family.passing(start, target, &mut StdRng::seed_from_u64(seed)));
         if best.1 >= 0 {
             return best;
         }

@@ -50,6 +50,10 @@ impl Family for Shapes<'_> {
     }
 
     fn grain(&self, spacing: f32) -> Grain {
-        Grain { angle: 0.0, along: spacing }
+        Grain { angle: 0.0, along: Some(spacing) }
+    }
+
+    fn passing(&self, point: Point, target: &Reference, rng: &mut impl Rng) -> Shape {
+        self.random(point, target, rng)
     }
 }

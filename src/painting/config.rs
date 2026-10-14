@@ -129,6 +129,8 @@ pub struct LayerConfig {
     pub scatter: f32,
     pub region: Option<Named<Region>>,
     #[serde(default)]
+    pub clip: bool,
+    #[serde(default)]
     pub placement: PlacementMode,
     #[serde(default)]
     pub blend: Blend,

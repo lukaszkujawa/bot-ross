@@ -10,7 +10,7 @@ pub struct Cli {
     #[arg(long)]
     pub size: u32,
     #[arg(long)]
-    pub out: PathBuf,
+    pub out: Option<PathBuf>,
     #[arg(long)]
     pub seed: Option<u64>,
     #[arg(long, value_delimiter = ',')]

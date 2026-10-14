@@ -23,8 +23,10 @@ fn main() -> Result<(), Box<dyn Error>> {
         paint(&plan, &reference, &mut canvas, &mut progress, cli.seed.unwrap_or(plan.search.seed))?;
     }
     let image = canvas.render();
-    save_image(&image, &cli.out)?;
-    println!("saved {}", cli.out.display());
+    if let Some(out) = &cli.out {
+        save_image(&image, out)?;
+        println!("saved {}", out.display());
+    }
     if let Some(window) = window.as_mut() {
         window.show_until_closed(&image)?;
     }

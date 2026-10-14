@@ -61,6 +61,7 @@ fn fill_layers_paint_every_lattice_point_without_searching() {
         spacing: 16.0,
         scatter: 0.0,
         region: None,
+        clip: false,
         placement: PlacementMode::Fill,
         blend: Blend::Normal,
         reference: Target::default(),

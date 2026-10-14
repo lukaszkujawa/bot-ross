@@ -69,6 +69,7 @@ fn unknown_names_are_reported_together_with_the_layer() {
 
 #[test]
 fn invalid_values_are_rejected_with_messages() {
+    assert!(parse(&BASE.replace("count = 10", "count = 10\nclip = true")).unwrap_err().contains("clip needs a region"));
     assert!(parse(&BASE.replace("count = 10", "count = 0")).unwrap_err().contains("count must be greater than 0"));
     assert!(parse(&BASE.replace("radius = [10, 30]", "radius = [30, 10]")).unwrap_err().contains("radius must be [min, max]"));
     assert!(parse(&BASE.replace("length = [60, 300]", "length = [60, 300], jitter = 2")).unwrap_err().contains("jitter must be between 0 and 1"));

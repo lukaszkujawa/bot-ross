@@ -19,6 +19,7 @@ fn plan(count: usize) -> LayerPlan {
         spacing: 0.0,
         scatter: 0.0,
         region: None,
+        clip: false,
         placement: PlacementMode::Error,
         blend: Blend::Normal,
         reference: Target::default(),
@@ -90,4 +91,19 @@ fn shape_layers_place_exact_polygons_without_rejections() {
     assert_eq!((outcome.placed, outcome.rejected), (15, 0), "{outcome:?}");
     let painted = canvas.render().argb.iter().filter(|px| **px != 0x00ffffff).count();
     assert!(painted > 0);
+}
+
+#[test]
+fn clipped_layers_paint_only_inside_their_region() {
+    let reference = blue();
+    let mut canvas = Canvas::new(96, 64, Premultiplied::WHITE);
+    let mut progress = Progress::new(None, &OutputConfig { report: 1000, snapshots: None });
+    let left = toml::from_str("select = [{ rectangle = { from = [0, 0], to = [48, 64] } }]\nfeather = 0\noutside = 0").unwrap();
+    let clipped = LayerPlan { region: Some(left), clip: true, ..plan(20) };
+    let outcome = paint_layer(&clipped, &mut canvas, &reference, &mut progress, &mut StdRng::seed_from_u64(1)).unwrap();
+    assert!(outcome.placed > 0, "{outcome:?}");
+    let image = canvas.render();
+    let painted = |columns: std::ops::Range<usize>| image.argb.iter().enumerate().filter(|(i, px)| columns.contains(&(i % 96)) && **px != 0x00ffffff).count();
+    assert!(painted(0..48) > 0);
+    assert_eq!(painted(48..96), 0);
 }

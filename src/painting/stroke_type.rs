@@ -164,7 +164,8 @@ impl StrokeType {
                 mutant.path = stroke.path.map(|p| Point { x: p.x + dx, y: p.y + dy });
             }
             1 => {
-                let (sin, cos) = pick([-TURN, TURN]).sin_cos();
+                let heading = (stroke.path.to.y - from.y).atan2(stroke.path.to.x - from.x);
+                let (sin, cos) = (self.turned(heading, pick([-TURN, TURN])) - heading).sin_cos();
                 mutant.path = stroke.path.map(|p| Point { x: from.x + (p.x - from.x) * cos - (p.y - from.y) * sin, y: from.y + (p.x - from.x) * sin + (p.y - from.y) * cos });
             }
             2 => {
@@ -185,6 +186,13 @@ impl StrokeType {
             _ => mutant.seed = seed,
         }
         mutant
+    }
+
+    fn turned(&self, heading: f32, turn: f32) -> f32 {
+        let Some(span) = self.angle else { return heading + turn };
+        let [low, high] = span.range().map(f32::to_radians);
+        let centre = (low + high) / 2.0;
+        (centre + (heading + turn - centre + PI).rem_euclid(TAU) - PI).clamp(low, high)
     }
 }
 

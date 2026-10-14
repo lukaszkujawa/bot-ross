@@ -54,6 +54,14 @@ impl Layer {
         });
     }
 
+    pub fn confine(&mut self, bounds: Bounds, before: &[Premultiplied], inside: impl Fn(usize, usize) -> f32) {
+        let mut previous = before.iter();
+        self.surface.visit_mut(bounds, |x, y, channels| {
+            let old = *previous.next().expect("pixel for every position in bounds");
+            channels.copy_from_slice(&old.mix(clamped(channels), inside(x, y)).to_channels());
+        });
+    }
+
     pub fn average(&self, centre: Point, extent: f32) -> Premultiplied {
         let (mut sum, mut count) = ([0u64; 4], 0u64);
         self.surface.visit(Bounds::around(centre.x, centre.y, extent, self.width, self.height), |_, _, channels| {

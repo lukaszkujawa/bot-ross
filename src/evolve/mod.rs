@@ -58,6 +58,15 @@ pub fn run_layer<F: Family>(
             weight * (1.0 + plan.reference.edges * contour)
         });
     }
+    let mask = region.as_ref().filter(|_| plan.clip).map(|(_, coverage)| coverage.as_slice());
+    let mut paint = |layer: &mut Layer, candidate: &F::Candidate| {
+        let Some(mask) = mask else { return paint(layer, candidate) };
+        let reach = family.reach(candidate, width, height);
+        let before = layer.read_region(reach);
+        let touched = paint(layer, candidate);
+        layer.confine(reach, &before, |x, y| mask[y * width + x]);
+        touched
+    };
     let layer = canvas.add_layer(plan.blend);
     if plan.placement == PlacementMode::Fill {
         let everywhere = vec![1.0; width * height];
@@ -65,7 +74,7 @@ pub fn run_layer<F: Family>(
         return fill::run(plan, family, paint, layer, &mut fitness, &palette, coverage, progress, rng);
     }
     let mut placement = Placement::new(&fitness, plan.placement, edges, CELL);
-    let searcher = Search { family, candidates: plan.candidates.max(1), refinements: plan.refinements };
+    let searcher = Search { family, candidates: plan.candidates.max(1), refinements: plan.refinements, mask };
     let mut outcome = Outcome::default();
     let started = Instant::now();
     while outcome.placed < plan.count && outcome.attempts < plan.count * plan.patience.max(1) && !progress.stopped {

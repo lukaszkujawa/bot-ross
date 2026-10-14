@@ -2,6 +2,7 @@ use bot_ross::color::Swatch;
 use bot_ross::flow::Flow;
 use bot_ross::painting::stroke_type::{PressureShape, StrokeType};
 use bot_ross::reference::Reference;
+use bot_ross::shape::fill::Span;
 use bot_ross::stroke::Point;
 use rand::SeedableRng;
 use rand::rngs::StdRng;
@@ -56,6 +57,18 @@ fn mutations_keep_radius_and_length_within_range_and_points_finite() {
         let chord = stroke.path.from.distance(stroke.path.to);
         assert!((19.0..=81.0).contains(&chord), "{chord}");
         assert!([stroke.path.from, stroke.path.control[0], stroke.path.control[1], stroke.path.to].iter().all(|p| p.x.is_finite() && p.y.is_finite()));
+    }
+}
+
+#[test]
+fn mutations_keep_the_heading_within_the_angle_span() {
+    let (kind, reference) = (StrokeType { angle: Some(Span::Range([-10.0, 10.0])), bend: [0.0, 0.0], ..kind() }, reference());
+    let mut rng = StdRng::seed_from_u64(6);
+    let mut stroke = kind.random(Point { x: 100.0, y: 100.0 }, &reference, &Flow::flat(200, 200), &mut rng);
+    for _ in 0..2000 {
+        stroke = kind.mutate(&stroke, &mut rng);
+        let heading = (stroke.path.to.y - stroke.path.from.y).atan2(stroke.path.to.x - stroke.path.from.x).to_degrees();
+        assert!((-10.01..=10.01).contains(&heading), "{heading}");
     }
 }
 

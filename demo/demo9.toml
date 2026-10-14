@@ -1,0 +1,24 @@
+[search]
+candidates = 12
+refinements = 2
+
+[brushes]
+air = { file = "../brushes/airbrush.toml" }
+pen = { file = "../brushes/pen.toml" }
+
+[regions]
+everything = { select = [{ rectangle = { from = [0, 0], to = [1, 1] } }], relative = true, feather = 0 }
+
+
+[strokes]
+stroke1 = { radius = [10, 70], angle = 0, length = [500, 1200], bend = [0, 0], pressure = "flat", jitter = 0 }
+
+
+[[layers]]
+name = "backdrop"
+brush = "pen"
+region = "everything"
+stroke = "stroke1"
+count = 100
+spacing = 20
+reference = { blur = 8 }

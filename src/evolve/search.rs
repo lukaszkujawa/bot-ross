@@ -12,6 +12,7 @@ pub struct Search<'a, F: Family> {
     pub family: &'a F,
     pub candidates: usize,
     pub refinements: usize,
+    pub mask: Option<&'a [f32]>,
 }
 
 impl<F: Family> Search<'_, F> {
@@ -34,7 +35,11 @@ impl<F: Family> Search<'_, F> {
         let seeds: Vec<u64> = (0..self.candidates).map(|_| rng.random()).collect();
         let score = |seed: u64| {
             let candidate = propose(seed);
-            let delta = fitness.delta(&self.family.proxy(&candidate, fitness));
+            let mut mark = self.family.proxy(&candidate, fitness);
+            if let Some(mask) = self.mask {
+                mark.clip(|x, y| 1.0 - mask[y * fitness.width + x]);
+            }
+            let delta = fitness.delta(&mark);
             (candidate, delta)
         };
         let worth_threads = self.family.largest_area() > PARALLEL_AREA;

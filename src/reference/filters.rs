@@ -1,5 +1,6 @@
 use crate::color::{OPAQUE, luminance};
 use crate::reference::Reference;
+use rayon::prelude::*;
 
 const SMOOTH_PASSES: usize = 3;
 const SMOOTH_RANGE: f32 = 0.1;
@@ -69,6 +70,7 @@ fn tapped(tap: Tap, x: usize, y: usize, offset: usize, kernel_len: usize, width:
 fn smear(pixels: &[[u16; 3]], width: usize, height: usize, kernel: &[f32], tap: Tap) -> Vec<[u16; 3]> {
     let total: f32 = kernel.iter().sum();
     (0..width * height)
+        .into_par_iter()
         .map(|index| {
             let (x, y) = (index % width, index / width);
             let mut sum = [0.0f32; 3];
@@ -85,6 +87,7 @@ fn smear(pixels: &[[u16; 3]], width: usize, height: usize, kernel: &[f32], tap: 
 fn keep_edges(pixels: &[[u16; 3]], width: usize, height: usize, kernel: &[f32], tap: Tap) -> Vec<[u16; 3]> {
     let range = SMOOTH_RANGE * OPAQUE as f32;
     (0..width * height)
+        .into_par_iter()
         .map(|index| {
             let (x, y) = (index % width, index / width);
             let centre = pixels[index];

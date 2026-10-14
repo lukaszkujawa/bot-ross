@@ -26,6 +26,7 @@ pub struct LayerPlan {
     pub spacing: f32,
     pub scatter: f32,
     pub region: Option<Region>,
+    pub clip: bool,
     pub placement: PlacementMode,
     pub blend: Blend,
     pub reference: Target,
@@ -118,6 +119,9 @@ fn resolve(index: usize, layer: &LayerConfig, painting: &PaintingConfig, base: &
         _ if layer.count == 0 => report("count must be greater than 0".into()),
         _ => {}
     }
+    if layer.clip && layer.region.is_none() {
+        report("clip needs a region".into());
+    }
     if !(0.0..=1.0).contains(&layer.scatter) {
         report("scatter must be between 0 and 1".into());
     }
@@ -145,6 +149,7 @@ fn resolve(index: usize, layer: &LayerConfig, painting: &PaintingConfig, base: &
         spacing: layer.spacing,
         scatter: layer.scatter,
         region,
+        clip: layer.clip,
         placement: layer.placement,
         blend: layer.blend,
         reference: layer.reference,

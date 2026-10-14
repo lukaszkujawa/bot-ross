@@ -1,3 +1,7 @@
+[search]
+candidates = 16
+refinements = 4
+
 [brushes]
 oil = { file = "../brushes/wet_oil.toml" }
 knife = { file = "../brushes/knife.toml" }
@@ -5,13 +9,15 @@ dry = { file = "../brushes/dry_brush.toml" }
 pen = { file = "../brushes/pen.toml" }
 
 [strokes]
-sweep = { radius = [30, 60], length = [200, 500], bend = [0.1, 0.4] }
-block = { radius = [15, 30], length = [80, 250], bend = [0.0, 0.2], pressure = "flat" }
+sweep = { radius = [30, 60], length = [200, 500], bend = [0.1, 0.4], opacity = 0.9 }
+block = { radius = [5, 30], length = [80, 250], bend = [0.0, 0.2], pressure = "hand",  opacity = 0.8 }
 detail = { radius = [3, 8], length = [20, 90], pressure = "fading" }
-line = { radius = [1, 2], length = [10, 40], bend = [0.0, 0.1], pressure = "flat" }
+line = { radius = [0.5, 1.2], length = [10, 40], bend = [0.0, 0.1], pressure = "hand" }
+
 
 [regions]
-face = { centre = [512, 380], radius = 260 }
+focus = { centre = [512, 280], radius = 200, weight = 2.0, outside = 0, feather = 0.3  }
+
 
 [[layers]]
 name = "underpainting"
@@ -24,18 +30,23 @@ name = "blocking"
 brush = "knife"
 stroke = "block"
 count = 800
+region = "focus"
+region_radius = 400
 
 [[layers]]
 name = "form"
 brush = "dry"
 stroke = "detail"
 count = 1500
-region = "face"
+region = "focus"
 
 [[layers]]
 name = "accents"
 brush = "pen"
 stroke = "line"
-count = 400
+stroke_follow = 1
+stroke_contrast = 1.3
+count = 2000
 placement = "edges"
-region = "face"
+region = "focus"
+reference = { edges = 2.0 }

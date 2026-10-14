@@ -1,4 +1,5 @@
 pub mod family;
+pub mod fill;
 pub mod progress;
 pub mod search;
 pub mod shapes;
@@ -49,16 +50,22 @@ pub fn run_layer<F: Family>(
     };
     let mut fitness = Fitness::new(&target, below, plan.blend);
     let edges = (plan.placement == PlacementMode::Edges || plan.reference.edges > 0.0).then(|| reference.edges());
-    if plan.region.is_some() || plan.reference.edges > 0.0 {
+    let region = plan.region.as_ref().map(|region| (region, region.coverage(reference)));
+    if region.is_some() || plan.reference.edges > 0.0 {
         fitness.weigh(|x, y| {
-            let region = plan.region.map_or(1.0, |region| region.on_canvas(width, height).weight_at(x as f32, y as f32));
+            let weight = region.as_ref().map_or(1.0, |(region, coverage)| region.weigh(coverage[y * width + x]));
             let contour = edges.as_ref().map_or(0.0, |edges| edges[y * width + x]);
-            region * (1.0 + plan.reference.edges * contour)
+            weight * (1.0 + plan.reference.edges * contour)
         });
+    }
+    let layer = canvas.add_layer(plan.blend);
+    if plan.placement == PlacementMode::Fill {
+        let everywhere = vec![1.0; width * height];
+        let coverage = region.as_ref().map_or(everywhere.as_slice(), |(_, coverage)| coverage.as_slice());
+        return fill::run(plan, family, paint, layer, &mut fitness, &palette, coverage, progress, rng);
     }
     let mut placement = Placement::new(&fitness, plan.placement, edges, CELL);
     let searcher = Search { family, candidates: plan.candidates.max(1), refinements: plan.refinements };
-    let layer = canvas.add_layer(plan.blend);
     let mut outcome = Outcome::default();
     let started = Instant::now();
     while outcome.placed < plan.count && outcome.attempts < plan.count * plan.patience.max(1) && !progress.stopped {

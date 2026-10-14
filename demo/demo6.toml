@@ -1,0 +1,137 @@
+[canvas]
+background = "white"
+
+[search]
+candidates = 8
+refinements = 2
+
+[brushes]
+water = { file = "../brushes/watercolour.toml" }
+wet = { file = "../brushes/watercolour_wet.toml" }
+dry = { file = "../brushes/dry_brush.toml" }
+liner = { file = "../brushes/liner.toml" }
+
+[regions]
+paper = { centre = [0.5, 0.5], radius = 0.6, relative = true, weight = 1.0, outside = 0.02, feather = 0.5 }
+far = { select = [{ rectangle = { from = [0, 0.5], to = [1, 1] } }], relative = true, weight = 1.0, outside = 0.3, feather = 2.0 }
+mid = { select = [{ rectangle = { from = [0, 0.7], to = [1, 1] } }], relative = true, weight = 1.0, outside = 0, feather = 4.0 }
+near = { select = [{ rectangle = { from = [0, 0.85], to = [1, 1] } }], relative = true, weight = 2.0, outside = 0, feather = 6.7 }
+street = { select = [{ rectangle = { from = [0, 0.79], to = [1, 1] } }], relative = true, weight = 3.0, outside = 0, feather = 3.6 }
+
+[strokes]
+flood = { radius = [70, 140], length = [150, 400], bend = [0.1, 0.4], pressure = "hand", jitter = 0.15, saturation = 0.6, opacity = 0.35 }
+bleed = { radius = [40, 90], length = [10, 200], bend = [0.0, 0.3], pressure = "hand", jitter = 0.1, saturation = 0.8, opacity = 0.4 }
+mass = { radius = [8, 24], length = [10, 60], bend = [0.0, 0.2], pressure = "hand", jitter = 0.1, follow = 0.5, opacity = 0.4 }
+upright = { radius = [2, 6], length = [10, 60], bend = [0.0, 0.0], pressure = "hand", jitter = 0.08, follow = 1, aim = [0, 100000], opacity = 0.55 }
+level = { radius = [1.5, 4], length = [8, 40], bend = [0.0, 0.0], pressure = "hand", jitter = 0.08, follow = 1, aim = [100000, 0], opacity = 0.55 }
+speck = { radius = [1, 2.5], length = [2, 7], bend = [0.0, 0.05], pressure = "hand", jitter = 0.06, follow = 0.3, opacity = 0.7 }
+light = { radius = [0.4, 1.0], length = [3, 12], bend = [0.0, 0.02], pressure = "flat", jitter = 0.03, follow = 0.4, contrast = 1.2, opacity = 0.9 }
+rigger = { contrast = 1.1, radius = [0.4, 1.0], length = [5, 25], bend = [0.0, 0.0], pressure = "fading", jitter = 0.05, follow = 0.3, value = 0.85, opacity = 0.7 }
+
+[shapes]
+flake = { points = [4, 7], radius = [1.5, 7], irregular = 0.4, follow = 0.7, aspect = [0.3, 1.0], jitter = 0.03, opacity = 0.8 }
+
+[[layers]]
+name = "floods"
+blend = "multiply"
+brush = "wet"
+stroke = "flood"
+count = 80
+region = "paper"
+accident = 0.4
+reference = { blur = 30, gamma = 2.5, saturation = 0.5 }
+
+[[layers]]
+name = "form"
+brush = "wet"
+stroke = "bleed"
+count = 200
+accident = 0.1
+reference = { blur = 10 }
+
+[[layers]]
+name = "masses"
+brush = "wet"
+stroke = "mass"
+count = 800
+region = "far"
+accident = 0.1
+reference = { blur = 6 }
+
+[[layers]]
+name = "uprights"
+brush = "dry"
+stroke = "upright"
+count = 1200
+region = "far"
+accident = 0.05
+reference = { blur = 2, edges = 2.0 }
+
+[[layers]]
+name = "levels"
+brush = "water"
+stroke = "level"
+count = 1200
+region = "mid"
+reference = { edges = 3.0 }
+
+[[layers]]
+name = "flakes"
+shape = "flake"
+count = 3000
+region = "mid"
+candidates = 12
+refinements = 3
+reference = { edges = 5.0 }
+
+[[layers]]
+name = "specks"
+brush = "water"
+stroke = "speck"
+count = 3000
+region = "near"
+candidates = 12
+refinements = 3
+reference = { edges = 8.0 }
+
+[[layers]]
+name = "street flakes"
+shape = "flake"
+shape_contrast = 1.3
+count = 3000
+region = "street"
+candidates = 12
+refinements = 3
+reference = { contrast = 1.3, edges = 5.0 }
+
+[[layers]]
+name = "street specks"
+brush = "water"
+stroke = "speck"
+stroke_contrast = 1.3
+count = 3000
+region = "street"
+candidates = 12
+refinements = 3
+reference = { contrast = 1.3, edges = 8.0 }
+
+[[layers]]
+name = "accents"
+blend = "multiply"
+brush = "liner"
+stroke = "rigger"
+count = 600
+region = "near"
+placement = "edges"
+reference = { contrast = 1.2, edges = 8.0 }
+
+[[layers]]
+name = "highlights"
+brush = "liner"
+stroke = "light"
+count = 1500
+region = "near"
+placement = "edges"
+candidates = 12
+refinements = 3
+reference = { contrast = 1.2, edges = 10.0 }

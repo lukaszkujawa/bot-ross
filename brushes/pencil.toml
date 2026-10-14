@@ -1,0 +1,34 @@
+name = "Pencil"
+
+[settings]
+hardness = 0.9
+anti_aliasing = 1.0
+dabs_per_actual_radius = 12.0
+opaque_linearize = 0.9
+smudge = 0.0
+
+[dynamics]
+radius_logarithmic = { pressure = [[0.0, -0.4], [1.0, 0.1]] }
+opaque_multiply = { pressure = [[0.0, 0.1], [0.4, 0.8], [1.0, 1.0]] }
+
+[bristles]
+density = 1.0
+max = 1
+spread = 0.0
+thickness = [1.0, 1.0]
+opacity = [0.75, 0.95]
+shade = 0.0
+wobble = 0.05
+reach = [1.0, 1.0]
+
+[paint]
+load = 1.0
+depletion = 0.2
+unevenness = 0.25
+skip = 0.12
+grain = 0.6
+fade = 0.15
+
+[proxy]
+opacity = 0.8
+width = 0.9

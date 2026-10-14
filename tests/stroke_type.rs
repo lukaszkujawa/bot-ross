@@ -7,7 +7,7 @@ use rand::SeedableRng;
 use rand::rngs::StdRng;
 
 fn kind() -> StrokeType {
-    StrokeType { radius: [4.0, 9.0], length: [20.0, 80.0], bend: [0.0, 0.3], pressure: PressureShape::Hand, jitter: 0.1, contrast: 1.0, saturation: 1.0, value: 1.0, palette: vec![], follow: 0.0, opacity: 1.0, aim: None }
+    StrokeType { radius: [4.0, 9.0], length: [20.0, 80.0], bend: [0.0, 0.3], pressure: PressureShape::Hand, jitter: 0.1, contrast: 1.0, saturation: 1.0, value: 1.0, palette: vec![], follow: 0.0, opacity: 1.0, aim: None, angle: None, length_bias: 0.5 }
 }
 
 fn reference() -> Reference {
@@ -26,6 +26,23 @@ fn random_strokes_stay_within_the_type_ranges() {
         assert!((stroke.color.value - 0.5).abs() <= 0.11);
         assert!(stroke.pressure.at(0.0) < 0.5 && stroke.pressure.at(0.5) == 1.0);
     }
+}
+
+#[test]
+fn length_bias_skews_lengths_toward_either_end_of_the_range() {
+    let reference = reference();
+    let median = |bias: f32| {
+        let kind = StrokeType { length_bias: bias, bend: [0.0, 0.0], ..kind() };
+        let mut rng = StdRng::seed_from_u64(5);
+        let mut chords: Vec<f32> = (0..1001).map(|_| kind.random(Point { x: 100.0, y: 100.0 }, &reference, &Flow::flat(200, 200), &mut rng)).map(|s| s.path.from.distance(s.path.to)).collect();
+        chords.sort_by(|a, b| a.total_cmp(b));
+        chords[500]
+    };
+    assert!((median(0.5) - 50.0).abs() < 4.0, "{}", median(0.5));
+    assert!(median(0.1) < 30.0, "{}", median(0.1));
+    assert!(median(0.9) > 70.0, "{}", median(0.9));
+    assert!(StrokeType { length_bias: 1.0, ..kind() }.validate("s").iter().any(|p| p.contains("length_bias")));
+    assert!(StrokeType { length_bias: 0.5, ..kind() }.validate("s").is_empty());
 }
 
 #[test]

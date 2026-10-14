@@ -3,6 +3,7 @@ use bot_ross::painting::config::{PlacementMode, Target};
 use bot_ross::painting::plan::{LayerPlan, Marks, Plan};
 use bot_ross::painting::shape_type::{Points, ShapeType};
 use bot_ross::painting::stroke_type::{PressureShape, StrokeType};
+use bot_ross::reference::Reference;
 use bot_ross::shape::fill::{Fill, Span};
 use std::path::{Path, PathBuf};
 
@@ -45,12 +46,9 @@ fn example_configs_load_and_resolve_names() {
     assert_eq!(stroke(&plan.layers[0]).0, Path::new("examples/../brushes/wet_oil.toml"));
     assert_eq!(stroke(&plan.layers[1]).1.radius, [15.0, 30.0]);
     assert_eq!(stroke(&plan.layers[1]).1.pressure, PressureShape::Flat);
-    let region = plan.layers[2].region.unwrap();
+    let region = plan.layers[2].region.as_ref().unwrap();
     assert_eq!((region.weight, region.outside, region.feather), (3.0, 1.0, 0.5));
-    assert_eq!(region.weight_at(512.0, 380.0), 3.0);
-    assert_eq!(region.weight_at(512.0, 380.0 + 260.0 * 1.5), 1.0);
-    let mid = region.weight_at(512.0, 380.0 + 260.0 * 1.25);
-    assert!(mid > 1.0 && mid < 3.0, "{mid}");
+    assert_eq!((region.centre, region.radius), (Some([512.0, 380.0]), Some(260.0)));
     assert_eq!(plan.layers[3].placement, PlacementMode::Edges);
     assert_eq!(plan.layers[3].reference, Target::default());
     assert_eq!((plan.search.candidates, plan.layers[0].candidates, plan.layers[0].patience), (16, 16, 4));
@@ -112,8 +110,8 @@ fn prefixed_keys_override_single_stroke_and_region_fields() {
     let plan = parse(&BASE.replace("count = 10", "count = 10\nregion = \"face\"\nstroke_radius = [1, 2]\nstroke_pressure = \"flat\"\nregion_weight = 9")).unwrap();
     let kind = stroke(&plan.layers[0]).1;
     assert_eq!((kind.radius, kind.length, kind.pressure), ([1.0, 2.0], [60.0, 300.0], PressureShape::Flat));
-    let region = plan.layers[0].region.unwrap();
-    assert_eq!((region.weight, region.radius), (9.0, 50.0));
+    let region = plan.layers[0].region.as_ref().unwrap();
+    assert_eq!((region.weight, region.radius), (9.0, Some(50.0)));
     let inline = parse(&BASE.replace("stroke = \"bold\"", "stroke = { radius = [1, 2], length = [5, 9] }\nstroke_length = [7, 8]")).unwrap();
     assert_eq!(stroke(&inline.layers[0]).1.length, [7.0, 8.0]);
     assert!(parse(&BASE.replace("count = 10", "count = 10\nstroke_radius = [5, 1]")).unwrap_err().contains("radius must be [min, max]"));
@@ -191,11 +189,11 @@ fn shape_layer_problems_are_reported() {
 #[test]
 fn relative_regions_resolve_against_the_canvas() {
     let plan = parse(&BASE.replace("face = { centre = [100, 100], radius = 50 }", "face = { centre = [0.5, 0.25], radius = 0.1, relative = true }").replace("count = 10", "count = 10\nregion = \"face\"")).unwrap();
-    let region = plan.layers[0].region.unwrap().on_canvas(200, 400);
-    assert_eq!((region.centre, region.radius), ([100.0, 100.0], 20.0));
-    assert_eq!(region.weight_at(100.0, 100.0), 3.0);
-    let fixed = parse(&BASE.replace("count = 10", "count = 10\nregion = \"face\"")).unwrap().layers[0].region.unwrap();
-    assert_eq!(fixed.on_canvas(200, 400), fixed);
+    let reference = Reference::from_rgb8(200, 400, &vec![255; 200 * 400 * 3]);
+    let mask = plan.layers[0].region.as_ref().unwrap().mask(&reference);
+    assert_eq!(mask[100 * 200 + 100], 3.0);
+    assert_eq!(mask[100 * 200 + 150], 1.0);
+    assert_eq!(mask[100 * 200 + 115], 3.0);
 }
 
 #[test]
@@ -207,9 +205,10 @@ fn layers_default_to_normal_blend_and_accept_multiply() {
 #[test]
 fn oval_regions_stretch_the_circle_vertically() {
     let plan = parse(&BASE.replace("radius = 50 }", "radius = 50, aspect = 2.0 }").replace("count = 10", "count = 10\nregion = \"face\"")).unwrap();
-    let region = plan.layers[0].region.unwrap();
-    assert_eq!(region.weight_at(100.0, 190.0), 3.0);
-    assert_eq!(region.weight_at(190.0, 100.0), 1.0);
+    let reference = Reference::from_rgb8(200, 200, &vec![255; 200 * 200 * 3]);
+    let mask = plan.layers[0].region.as_ref().unwrap().mask(&reference);
+    assert_eq!(mask[190 * 200 + 100], 3.0);
+    assert_eq!(mask[100 * 200 + 190], 1.0);
     let flat = parse(&BASE.replace("radius = 50 }", "radius = 50, aspect = 0 }").replace("count = 10", "count = 10\nregion = \"face\"")).unwrap_err();
     assert!(flat.contains("region aspect must be greater than 0"), "{flat}");
 }

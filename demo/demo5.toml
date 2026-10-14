@@ -1,0 +1,51 @@
+[canvas]
+background = "#f2ede2"
+
+[search]
+candidates = 8
+refinements = 2
+
+[brushes]
+liner = { file = "../brushes/liner.toml" }
+
+[strokes]
+contour = { radius = [0.6, 1.0], length = [20, 140], bend = [0.0, 0.2], pressure = "flat", jitter = 0.0, value = 0.0, follow = 0.9 }
+curl = { radius = [0.5, 0.7], length = [15, 70], bend = [0.5, 1.2], pressure = "flat", jitter = 0.0, value = 0.0, follow = 0.3 }
+
+[shapes]
+tone = { points = [4, 8], radius = [20, 80], irregular = 0.5, aspect = [0.25, 0.7], follow = 1.0, jitter = 0.0, value = 0.0, overlap = false, fill = { style = "hatch", spacing = [6, 9], width = [0.8, 1.1], angle = [35, 55] } }
+shadow = { points = [4, 8], radius = [15, 60], irregular = 0.6, aspect = [0.25, 0.7], follow = 1.0, jitter = 0.0, value = 0.0, overlap = false, fill = { style = "hatch", spacing = [5, 8], width = [0.8, 1.1], angle = [115, 145] } }
+deep = { points = [3, 7], radius = [8, 40], irregular = 0.7, follow = 1.0, jitter = 0.0, value = 0.0, overlap = false, fill = { style = "hatch", spacing = [4, 6], width = [0.8, 1.1] } }
+
+[[layers]]
+name = "contours"
+brush = "liner"
+stroke = "contour"
+count = 1500
+placement = "edges"
+reference = { smooth = 2, edges = 6.0, saturation = 0, gamma = 1.8 }
+
+[[layers]]
+name = "tone"
+shape = "tone"
+count = 2500
+reference = { smooth = 4, saturation = 0, gamma = 1.8 }
+
+[[layers]]
+name = "shadow"
+shape = "shadow"
+count = 2500
+reference = { smooth = 3, saturation = 0, gamma = 1.8 }
+
+[[layers]]
+name = "deep"
+shape = "deep"
+count = 2000
+reference = { smooth = 2, saturation = 0, gamma = 1.8 }
+
+[[layers]]
+name = "curls"
+brush = "liner"
+stroke = "curl"
+count = 600
+reference = { smooth = 3, saturation = 0, gamma = 1.8 }

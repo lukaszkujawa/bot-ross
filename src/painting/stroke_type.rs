@@ -1,6 +1,7 @@
 use crate::color::{Hsv, Swatch, pick_swatch};
 use crate::flow::Flow;
 use crate::reference::Reference;
+use crate::shape::fill::Span;
 use crate::stroke::{Curve, Point, Pressure, Stroke};
 use rand::{Rng, RngExt};
 use serde::{Deserialize, Serialize};
@@ -36,10 +37,17 @@ pub struct StrokeType {
     #[serde(default = "one")]
     pub opacity: f32,
     pub aim: Option<[f32; 2]>,
+    pub angle: Option<Span>,
+    #[serde(default = "half")]
+    pub length_bias: f32,
 }
 
 fn one() -> f32 {
     1.0
+}
+
+fn half() -> f32 {
+    0.5
 }
 
 fn default_bend() -> [f32; 2] {
@@ -85,6 +93,9 @@ impl StrokeType {
                 problems.push(format!("{label}: {key} must be between 0 and 1"));
             }
         }
+        if !(self.length_bias > 0.0 && self.length_bias < 1.0) {
+            problems.push(format!("{label}: length_bias must be between 0 and 1, exclusive"));
+        }
         if !(self.opacity > 0.0 && self.opacity <= 1.0) {
             problems.push(format!("{label}: opacity must be greater than 0 and at most 1"));
         }
@@ -98,11 +109,13 @@ impl StrokeType {
 
     pub fn random(&self, start: Point, reference: &Reference, flow: &Flow, rng: &mut impl Rng) -> Stroke {
         let mut pick = |range: [f32; 2]| rng.random_range(range[0]..=range[1]);
-        let (radius, length) = (pick(self.radius), pick(self.length));
+        let (radius, length) = (pick(self.radius), self.length_at(biased(pick([0.0, 1.0]), self.length_bias)));
         let (tangent, strength) = flow.at(start);
         let attraction = self.follow * strength;
-        let heading = tangent + if pick([0.0, 1.0]) < 0.5 { PI } else { 0.0 };
-        let angle = heading + pick([-1.0, 1.0]) * (1.0 - attraction) * PI;
+        let angle = match self.angle {
+            Some(span) => pick(span.range()).to_radians(),
+            None => tangent + if pick([0.0, 1.0]) < 0.5 { PI } else { 0.0 } + pick([-1.0, 1.0]) * (1.0 - attraction) * PI,
+        };
         let traced = self.trace(start, angle, length, flow);
         let chord = traced[0].distance(traced[3]).max(f32::EPSILON);
         let (nx, ny) = (-(traced[3].y - traced[0].y) / chord, (traced[3].x - traced[0].x) / chord);
@@ -114,6 +127,14 @@ impl StrokeType {
         let base = pick_swatch(&self.palette, &mut pick).unwrap_or_else(|| Hsv::from_rgb(reference.mean_along(&path)));
         let color = base.saturated(self.saturation).dimmed(self.value).contrasted(self.contrast).jittered(self.jitter, &mut pick);
         Stroke { path, pressure: self.pressure.profile(), color, radius, opacity: self.opacity, seed: rng.random() }
+    }
+
+    pub fn typical_length(&self) -> f32 {
+        self.length_at(self.length_bias)
+    }
+
+    fn length_at(&self, t: f32) -> f32 {
+        self.length[0] + (self.length[1] - self.length[0]) * t
     }
 
     fn trace(&self, start: Point, mut direction: f32, length: f32, flow: &Flow) -> [Point; 4] {
@@ -165,6 +186,10 @@ impl StrokeType {
         }
         mutant
     }
+}
+
+fn biased(t: f32, bias: f32) -> f32 {
+    t / ((1.0 / bias - 2.0) * (1.0 - t) + 1.0)
 }
 
 fn through([p0, p1, p2, p3]: [Point; 4]) -> Curve {

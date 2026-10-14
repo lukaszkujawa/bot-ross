@@ -1,0 +1,41 @@
+[search]
+candidates = 8
+refinements = 3
+
+[brushes]
+knife = { file = "../brushes/knife.toml" }
+pen = { file = "../brushes/pen.toml" }
+oil = { file = "../brushes/wet_oil.toml" }
+dry = { file = "../brushes/dry_brush.toml" }
+
+[regions]
+focus1 = { centre = [512, 550], radius = 250, weight = 1.0, outside = 0, feather = 0.4 }
+focus2 = { centre = [512, 550], radius = 200, weight = 0.8, outside = 0, feather = 0.2 }
+
+[strokes]
+hairline = {radius = [0.4, 0.9], length = [100, 1000],  bend = [0.0, 0.2],  pressure = "hand",  aim = [384, 512]}
+bgstr = { radius = [20, 95], length = [80, 600], bend = [0.0, 0.2], pressure = "fading", jitter = 0.18, follow = 0.2, opacity = 0.8 }
+
+[[layers]]
+name = "background"
+brush = "knife"
+stroke = "bgstr"
+count = 100
+
+
+[[layers]]
+name = "form"
+brush = "knife"
+stroke = { radius = [1, 10], length = [20, 250], bend = [0.0, 0.1], pressure = "hand", jitter = 0.08, follow = 0.2, opacity = 0.8 }
+count = 2000
+region = "focus1"
+accident = 0.05
+
+[[layers]]
+name = "details"
+brush = "oil"
+stroke = { radius = [0.1, 0.7], contrast = 1.8, length = [5, 50], bend = [0.0, 0.1], pressure = "hand", jitter = 0.0, follow = 0.6, opacity = 0.95 }
+count = 4000
+region = "focus2"
+accident = 0.05
+reference = { edges = 16.0 }

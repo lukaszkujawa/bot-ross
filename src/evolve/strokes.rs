@@ -2,6 +2,7 @@ use crate::bounds::Bounds;
 use crate::evolve::family::Family;
 use crate::fitness::Fitness;
 use crate::flow::Flow;
+use crate::lattice::Grain;
 use crate::mark::Mark;
 use crate::painting::stroke_type::StrokeType;
 use crate::proxy::{Proxy, ribbon};
@@ -51,5 +52,12 @@ impl Family for Strokes<'_> {
 
     fn largest_area(&self) -> f32 {
         self.kind.radius[1] * self.kind.length[1]
+    }
+
+    fn grain(&self, spacing: f32) -> Grain {
+        match self.kind.angle {
+            Some(span) => Grain { angle: span.range().iter().sum::<f32>().to_radians() / 2.0, along: self.kind.typical_length() },
+            None => Grain { angle: 0.0, along: spacing },
+        }
     }
 }

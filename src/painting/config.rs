@@ -1,8 +1,9 @@
 use crate::color::Blend;
+use crate::painting::region::Region;
 use crate::painting::shape_type::ShapeType;
 use crate::painting::stroke_type::StrokeType;
 use crate::reference::Reference;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use std::borrow::Cow;
 use std::collections::BTreeMap;
 use std::path::PathBuf;
@@ -66,52 +67,6 @@ pub struct BrushRef {
     pub file: PathBuf,
 }
 
-#[derive(Debug, Clone, Copy, Deserialize, Serialize, PartialEq)]
-#[serde(deny_unknown_fields)]
-pub struct Region {
-    pub centre: [f32; 2],
-    pub radius: f32,
-    #[serde(default = "default_weight")]
-    pub weight: f32,
-    #[serde(default = "one")]
-    pub outside: f32,
-    #[serde(default = "half")]
-    pub feather: f32,
-    #[serde(default)]
-    pub relative: bool,
-    #[serde(default = "one")]
-    pub aspect: f32,
-}
-
-impl Region {
-    pub fn on_canvas(self, width: usize, height: usize) -> Self {
-        if !self.relative {
-            return self;
-        }
-        let (width, height) = (width as f32, height as f32);
-        Self { centre: [self.centre[0] * width, self.centre[1] * height], radius: self.radius * width.min(height), relative: false, ..self }
-    }
-
-    pub fn weight_at(&self, x: f32, y: f32) -> f32 {
-        let (dx, dy) = (x - self.centre[0], (y - self.centre[1]) / self.aspect);
-        let beyond = dx.hypot(dy) - self.radius;
-        let t = (beyond / (self.radius * self.feather).max(f32::EPSILON)).clamp(0.0, 1.0);
-        self.weight + (self.outside - self.weight) * t * t * (3.0 - 2.0 * t)
-    }
-}
-
-fn default_weight() -> f32 {
-    3.0
-}
-
-fn one() -> f32 {
-    1.0
-}
-
-fn half() -> f32 {
-    0.5
-}
-
 #[derive(Debug, Clone, Copy, Default, Deserialize, PartialEq)]
 #[serde(rename_all = "lowercase")]
 pub enum PlacementMode {
@@ -119,6 +74,7 @@ pub enum PlacementMode {
     Error,
     Edges,
     Random,
+    Fill,
 }
 
 #[derive(Debug, Clone, Copy, Deserialize, PartialEq)]
@@ -165,7 +121,12 @@ pub struct LayerConfig {
     pub brush: Option<Named<BrushRef>>,
     pub stroke: Option<Named<StrokeType>>,
     pub shape: Option<Named<ShapeType>>,
+    #[serde(default)]
     pub count: usize,
+    #[serde(default)]
+    pub spacing: f32,
+    #[serde(default = "quarter")]
+    pub scatter: f32,
     pub region: Option<Named<Region>>,
     #[serde(default)]
     pub placement: PlacementMode,
@@ -181,6 +142,10 @@ pub struct LayerConfig {
     pub refinements: Option<usize>,
     #[serde(flatten)]
     pub overrides: BTreeMap<String, toml::Value>,
+}
+
+fn quarter() -> f32 {
+    0.25
 }
 
 #[derive(Debug, Clone, Deserialize)]

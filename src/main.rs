@@ -1,7 +1,7 @@
 use bot_ross::canvas::Canvas;
 use bot_ross::cli::Cli;
 use bot_ross::evolve::progress::Progress;
-use bot_ross::output::save_png;
+use bot_ross::output::save_image;
 use bot_ross::painter::{background, paint};
 use bot_ross::painting::plan::Plan;
 use bot_ross::reference::Reference;
@@ -23,7 +23,7 @@ fn main() -> Result<(), Box<dyn Error>> {
         paint(&plan, &reference, &mut canvas, &mut progress, cli.seed.unwrap_or(plan.search.seed))?;
     }
     let image = canvas.render();
-    save_png(&image, &cli.out)?;
+    save_image(&image, &cli.out)?;
     println!("saved {}", cli.out.display());
     if let Some(window) = window.as_mut() {
         window.show_until_closed(&image)?;

@@ -21,6 +21,10 @@ impl Window {
         Ok(Self { inner, width, height })
     }
 
+    pub fn size(&self) -> (usize, usize) {
+        (self.width, self.height)
+    }
+
     pub fn present(&mut self, image: &Image) -> Result<bool, Box<dyn Error>> {
         self.inner.update_with_buffer(&image.argb, image.width, image.height)?;
         Ok(self.inner.is_open() && !self.inner.is_key_down(Key::Escape))

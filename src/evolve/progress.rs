@@ -1,5 +1,5 @@
 use crate::fitness::Fitness;
-use crate::output::save_png;
+use crate::output::save_image;
 use crate::painting::config::OutputConfig;
 use crate::window::Window;
 use std::error::Error;
@@ -27,7 +27,7 @@ impl<'a> Progress<'a> {
             println!("{layer:<16} {placed:>6}/{count}  error {:.3e}  {elapsed:>7.1}s  {:.1} strokes/s", fitness.total() as f64, placed as f64 / elapsed.max(1e-9));
             if let Some(directory) = &self.snapshots {
                 std::fs::create_dir_all(directory)?;
-                save_png(&fitness.image(), directory.join(format!("{layer}-{placed:06}.png")))?;
+                save_image(&fitness.image(), directory.join(format!("{layer}-{placed:06}.png")))?;
             }
         }
         if self.last_frame.elapsed() >= FRAME_INTERVAL {

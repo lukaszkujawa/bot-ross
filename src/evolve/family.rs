@@ -1,5 +1,6 @@
 use crate::bounds::Bounds;
 use crate::fitness::Fitness;
+use crate::lattice::Grain;
 use crate::mark::Mark;
 use crate::reference::Reference;
 use crate::stroke::Point;
@@ -13,4 +14,5 @@ pub trait Family: Sync {
     fn proxy(&self, candidate: &Self::Candidate, fitness: &Fitness) -> Mark;
     fn reach(&self, candidate: &Self::Candidate, width: usize, height: usize) -> Bounds;
     fn largest_area(&self) -> f32;
+    fn grain(&self, spacing: f32) -> Grain;
 }

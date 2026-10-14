@@ -218,6 +218,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "bot-ross-mcp"
+version = "0.1.0"
+dependencies = [
+ "bot-ross",
+ "clap",
+ "image",
+ "serde",
+ "serde_json",
+]
+
+[[package]]
 name = "built"
 version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"

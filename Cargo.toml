@@ -2,6 +2,7 @@
 name = "bot-ross"
 version = "0.1.0"
 edition = "2024"
+default-run = "bot-ross"
 
 [dependencies]
 clap = { version = "4", features = ["derive"] }
@@ -12,6 +13,9 @@ rayon = "1"
 resvg = "0.48"
 serde = { version = "1", features = ["derive"] }
 toml = "1"
+
+[workspace]
+members = ["mcp"]
 
 [build-dependencies]
 pkg-config = "0.3"

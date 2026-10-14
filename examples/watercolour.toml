@@ -14,10 +14,10 @@ liner = { file = "../brushes/liner.toml" }
 
 [regions]
 paper = { centre = [0.5, 0.5], radius = 0.6, relative = true, weight = 1.0, outside = 0.02, feather = 0.5 }
-far = { centre = [0.5, 1.0], radius = 3, aspect = 0.17, relative = true, weight = 1.0, outside = 0.3, feather = 1.0 }
-mid = { centre = [0.5, 1.0], radius = 3, aspect = 0.1, relative = true, weight = 1.0, outside = 0, feather = 2.0 }
-near = { centre = [0.5, 1.0], radius = 3, aspect = 0.05, relative = true, weight = 2.0, outside = 0, feather = 3.3 }
-street = { centre = [0.5, 1.0], radius = 3, aspect = 0.07, relative = true, weight = 3.0, outside = 0, feather = 1.8 }
+far = { select = [{ rectangle = { from = [0, 0.5], to = [1, 1] } }], relative = true, weight = 1.0, outside = 0.3, feather = 2.0 }
+mid = { select = [{ rectangle = { from = [0, 0.7], to = [1, 1] } }], relative = true, weight = 1.0, outside = 0, feather = 4.0 }
+near = { select = [{ rectangle = { from = [0, 0.85], to = [1, 1] } }], relative = true, weight = 2.0, outside = 0, feather = 6.7 }
+street = { select = [{ rectangle = { from = [0, 0.79], to = [1, 1] } }], relative = true, weight = 3.0, outside = 0, feather = 3.6 }
 
 [strokes]
 flood = { radius = [70, 140], length = [150, 400], bend = [0.1, 0.4], pressure = "hand", jitter = 0.15, saturation = 0.6, opacity = 0.35 }

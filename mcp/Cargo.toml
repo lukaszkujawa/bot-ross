@@ -1,0 +1,15 @@
+[package]
+name = "bot-ross-mcp"
+version = "0.1.0"
+edition = "2024"
+
+[[bin]]
+name = "bot-ross-mcp"
+path = "src/main.rs"
+
+[dependencies]
+bot-ross = { path = ".." }
+clap = { version = "4", features = ["derive"] }
+image = "0.25"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"

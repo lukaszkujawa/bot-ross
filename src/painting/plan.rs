@@ -1,5 +1,6 @@
 use crate::color::Blend;
-use crate::painting::config::{LayerConfig, Named, OutputConfig, PaintingConfig, PlacementMode, Region, SearchConfig, Target};
+use crate::painting::config::{LayerConfig, Named, OutputConfig, PaintingConfig, PlacementMode, SearchConfig, Target};
+use crate::painting::region::Region;
 use crate::painting::shape_type::ShapeType;
 use crate::painting::stroke_type::StrokeType;
 use serde::Serialize;
@@ -22,6 +23,8 @@ pub struct LayerPlan {
     pub name: String,
     pub marks: Marks,
     pub count: usize,
+    pub spacing: f32,
+    pub scatter: f32,
     pub region: Option<Region>,
     pub placement: PlacementMode,
     pub blend: Blend,
@@ -91,8 +94,8 @@ fn resolve(index: usize, layer: &LayerConfig, painting: &PaintingConfig, base: &
     let label = format!("layer {index} \"{}\"", layer.name);
     let mut report = |problem: String| problems.push(format!("{label}: {problem}"));
     let region = layer.region.as_ref().and_then(|named| lookup(named, &painting.regions, "region", "regions").and_then(|region| overridden(region, &layer.overrides, "region_")).map_err(&mut report).ok());
-    if region.is_some_and(|region| region.aspect <= 0.0) {
-        report("region aspect must be greater than 0".into());
+    for problem in region.iter().flat_map(Region::validate) {
+        report(problem);
     }
     for key in layer.overrides.keys() {
         let (kind, _) = key.split_once('_').unwrap_or((key, ""));
@@ -109,8 +112,14 @@ fn resolve(index: usize, layer: &LayerConfig, painting: &PaintingConfig, base: &
             report(format!("{key} needs a {kind}"));
         }
     }
-    if layer.count == 0 {
-        report("count must be greater than 0".into());
+    match layer.placement {
+        PlacementMode::Fill if layer.spacing <= 0.0 => report("fill placement needs spacing greater than 0".into()),
+        PlacementMode::Fill => {}
+        _ if layer.count == 0 => report("count must be greater than 0".into()),
+        _ => {}
+    }
+    if !(0.0..=1.0).contains(&layer.scatter) {
+        report("scatter must be between 0 and 1".into());
     }
     let reference = layer.reference;
     if [reference.blur, reference.smooth, reference.edges, reference.contrast, reference.saturation].iter().any(|v| *v < 0.0) {
@@ -133,6 +142,8 @@ fn resolve(index: usize, layer: &LayerConfig, painting: &PaintingConfig, base: &
         name: layer.name.clone(),
         marks,
         count: layer.count,
+        spacing: layer.spacing,
+        scatter: layer.scatter,
         region,
         placement: layer.placement,
         blend: layer.blend,

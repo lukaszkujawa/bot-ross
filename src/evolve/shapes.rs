@@ -2,6 +2,7 @@ use crate::bounds::Bounds;
 use crate::evolve::family::Family;
 use crate::fitness::Fitness;
 use crate::flow::Flow;
+use crate::lattice::Grain;
 use crate::mark::Mark;
 use crate::painting::shape_type::ShapeType;
 use crate::reference::Reference;
@@ -46,5 +47,9 @@ impl Family for Shapes<'_> {
 
     fn largest_area(&self) -> f32 {
         self.kind.radius[1] * self.kind.radius[1]
+    }
+
+    fn grain(&self, spacing: f32) -> Grain {
+        Grain { angle: 0.0, along: spacing }
     }
 }

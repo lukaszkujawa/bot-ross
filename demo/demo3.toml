@@ -1,0 +1,202 @@
+[canvas]
+background = "white"
+
+[brushes]
+pencil = { file = "../brushes/pencil.toml" }
+air = { file = "../brushes/airbrush.toml" }
+
+[regions]
+wall_tone = { select = [{ rectangle = { from = [0, 0], to = [1, 0.66] }, feather = 0 }, { mode = "intersect", luminance = [0, 0.7], feather = 0.4 }, { mode = "subtract", ellipse = { centre = [0.71, 0.47], radius = 0.36 }, feather = 0.03 }], relative = true }
+wall_shade = { select = [{ rectangle = { from = [0, 0], to = [1, 0.66] }, feather = 0 }, { mode = "intersect", luminance = [0, 0.42], feather = 0.4 }, { mode = "subtract", ellipse = { centre = [0.71, 0.47], radius = 0.36 }, feather = 0.03 }], relative = true }
+cloth_tone = { select = [{ rectangle = { from = [0, 0.66], to = [1, 1] }, feather = 0 }, { mode = "intersect", luminance = [0, 0.55], feather = 0.4 }, { mode = "subtract", ellipse = { centre = [0.71, 0.47], radius = 0.36 }, feather = 0.03 }], relative = true }
+cloth_shade = { select = [{ rectangle = { from = [0, 0.66], to = [1, 1] }, feather = 0 }, { mode = "intersect", luminance = [0, 0.3], feather = 0.4 }, { mode = "subtract", ellipse = { centre = [0.71, 0.47], radius = 0.36 }, feather = 0.03 }], relative = true }
+sphere_half = { select = [{ ellipse = { centre = [0.71, 0.47], radius = 0.36 }, feather = 0.03 }, { mode = "intersect", luminance = [0, 0.75], feather = 0.15 }], relative = true }
+sphere_shadow = { select = [{ ellipse = { centre = [0.71, 0.47], radius = 0.36 }, feather = 0.03 }, { mode = "intersect", luminance = [0, 0.55], feather = 0.3 }], relative = true }
+sphere_core = { select = [{ ellipse = { centre = [0.71, 0.47], radius = 0.36 }, feather = 0.03 }, { mode = "intersect", luminance = [0, 0.38], feather = 0.4 }], relative = true }
+tone_mid = { select = [{ luminance = [0, 0.6], feather = 0.4 }, { mode = "subtract", ellipse = { centre = [0.71, 0.47], radius = 0.36 }, feather = 0.03 }], relative = true }
+tone_dark = { select = [{ luminance = [0, 0.3], feather = 0.4 }, { mode = "subtract", ellipse = { centre = [0.71, 0.47], radius = 0.36 }, feather = 0.03 }], relative = true }
+tone_black = { select = [{ luminance = [0, 0.12], feather = 0.5 }, { mode = "subtract", ellipse = { centre = [0.71, 0.47], radius = 0.36 }, feather = 0.03 }], relative = true }
+sphere_tone = { select = [{ ellipse = { centre = [0.71, 0.47], radius = 0.36 }, feather = 0.03 }, { mode = "intersect", luminance = [0, 0.6], feather = 0.3 }], relative = true }
+sphere_tone_dark = { select = [{ ellipse = { centre = [0.71, 0.47], radius = 0.36 }, feather = 0.03 }, { mode = "intersect", luminance = [0, 0.4], feather = 0.35 }], relative = true }
+deep_1 = { select = [{ luminance = [0, 0.3], feather = 0.35 }], relative = true }
+deep_2 = { select = [{ luminance = [0, 0.22], feather = 0.35 }], relative = true }
+deep_3 = { select = [{ luminance = [0, 0.15], feather = 0.35 }], relative = true }
+deep_4 = { select = [{ luminance = [0, 0.09], feather = 0.4 }], relative = true }
+
+[strokes]
+tone = { radius = [14, 22], length = [40, 90], length_bias = 0.6, bend = [0.0, 0.05], angle = [40, 50], palette = ["#3a3a40"], opacity = 0.3 }
+sphere_tone = { radius = [8, 12], length = [15, 30], bend = [0.0, 0.05], angle = [40, 50], palette = ["#3a3a40"], opacity = 0.3 }
+sphere_tone_dark = { radius = [6, 10], length = [12, 24], bend = [0.0, 0.05], angle = [130, 140], palette = ["#2a2a30"], opacity = 0.35 }
+tone_dark = { radius = [12, 18], length = [30, 70], length_bias = 0.6, bend = [0.0, 0.05], angle = [130, 140], palette = ["#2a2a30"], opacity = 0.28 }
+tone_black = { radius = [8, 14], length = [20, 50], bend = [0.0, 0.05], angle = [40, 50], palette = ["#1a1a1e"], opacity = 0.35 }
+wall = { radius = [0.5, 0.8], length = [40, 90], length_bias = 0.6, bend = [0.0, 0.02], angle = [72, 78], palette = ["#2a2a2e"], opacity = 0.7 }
+wall_cross = { radius = [0.5, 0.8], length = [40, 90], length_bias = 0.6, bend = [0.0, 0.02], angle = [108, 114], palette = ["#2a2a2e"], opacity = 0.7 }
+cloth = { radius = [0.5, 0.8], length = [60, 140], length_bias = 0.6, bend = [0.0, 0.02], angle = [-2, 2], palette = ["#2a2a2e"], opacity = 0.7 }
+cloth_cross = { radius = [0.5, 0.8], length = [50, 120], length_bias = 0.5, bend = [0.0, 0.02], angle = [12, 16], palette = ["#2a2a2e"], opacity = 0.7 }
+half = { radius = [0.4, 0.7], length = [30, 60], length_bias = 0.4, bend = [0.0, 0.03], angle = [40, 50], palette = ["#2a2a2e"], opacity = 0.45 }
+shadow = { radius = [0.5, 0.8], length = [25, 50], bend = [0.0, 0.03], angle = [130, 140], palette = ["#2a2a2e"], opacity = 0.7 }
+core = { radius = [0.5, 0.9], length = [20, 40], bend = [0.0, 0.03], angle = [85, 95], palette = ["#1e1e22"], opacity = 0.85 }
+deep_1 = { radius = [0.6, 1.0], length = [25, 50], bend = [0.0, 0.03], angle = [40, 50], palette = ["#1e1e22"], opacity = 0.8 }
+deep_2 = { radius = [0.6, 1.0], length = [25, 50], bend = [0.0, 0.03], angle = [130, 140], palette = ["#1e1e22"], opacity = 0.85 }
+deep_3 = { radius = [0.7, 1.1], length = [20, 40], bend = [0.0, 0.03], angle = [-5, 5], palette = ["#161618"], opacity = 0.9 }
+deep_4 = { radius = [0.8, 1.2], length = [15, 35], bend = [0.0, 0.03], angle = [85, 95], palette = ["#101012"], opacity = 0.95 }
+
+[[layers]]
+name = "tone"
+blend = "multiply"
+brush = "air"
+stroke = "tone"
+placement = "fill"
+spacing = 10
+scatter = 0.3
+region = "tone_mid"
+
+[[layers]]
+name = "tone dark"
+blend = "multiply"
+brush = "air"
+stroke = "tone_dark"
+placement = "fill"
+spacing = 10
+scatter = 0.3
+region = "tone_dark"
+
+[[layers]]
+name = "tone black"
+blend = "multiply"
+brush = "air"
+stroke = "tone_black"
+placement = "fill"
+spacing = 8
+scatter = 0.3
+region = "tone_black"
+
+[[layers]]
+name = "sphere tone"
+blend = "multiply"
+brush = "air"
+stroke = "sphere_tone"
+placement = "fill"
+spacing = 6
+scatter = 0.3
+region = "sphere_tone"
+
+[[layers]]
+name = "sphere tone dark"
+blend = "multiply"
+brush = "air"
+stroke = "sphere_tone_dark"
+placement = "fill"
+spacing = 5
+scatter = 0.3
+region = "sphere_tone_dark"
+
+[[layers]]
+name = "wall"
+blend = "multiply"
+brush = "pencil"
+stroke = "wall"
+placement = "fill"
+spacing = 6
+scatter = 0.25
+region = "wall_tone"
+
+[[layers]]
+name = "wall shade"
+blend = "multiply"
+brush = "pencil"
+stroke = "wall_cross"
+placement = "fill"
+spacing = 6
+scatter = 0.25
+region = "wall_shade"
+
+[[layers]]
+name = "cloth"
+blend = "multiply"
+brush = "pencil"
+stroke = "cloth"
+placement = "fill"
+spacing = 5
+scatter = 0.25
+region = "cloth_tone"
+
+[[layers]]
+name = "cloth shade"
+blend = "multiply"
+brush = "pencil"
+stroke = "cloth_cross"
+placement = "fill"
+spacing = 5
+scatter = 0.25
+region = "cloth_shade"
+
+[[layers]]
+name = "halftone"
+blend = "multiply"
+brush = "pencil"
+stroke = "half"
+placement = "fill"
+spacing = 6
+scatter = 0.25
+region = "sphere_half"
+
+[[layers]]
+name = "form shadow"
+blend = "multiply"
+brush = "pencil"
+stroke = "shadow"
+placement = "fill"
+spacing = 5
+scatter = 0.25
+region = "sphere_shadow"
+
+[[layers]]
+name = "core shadow"
+blend = "multiply"
+brush = "pencil"
+stroke = "core"
+placement = "fill"
+spacing = 4
+scatter = 0.2
+region = "sphere_core"
+
+[[layers]]
+name = "deep 1"
+blend = "multiply"
+brush = "pencil"
+stroke = "deep_1"
+placement = "fill"
+spacing = 4
+scatter = 0.25
+region = "deep_1"
+
+[[layers]]
+name = "deep 2"
+blend = "multiply"
+brush = "pencil"
+stroke = "deep_2"
+placement = "fill"
+spacing = 4
+scatter = 0.25
+region = "deep_2"
+
+[[layers]]
+name = "deep 3"
+blend = "multiply"
+brush = "pencil"
+stroke = "deep_3"
+placement = "fill"
+spacing = 3
+scatter = 0.2
+region = "deep_3"
+
+[[layers]]
+name = "deep 4"
+blend = "multiply"
+brush = "pencil"
+stroke = "deep_4"
+placement = "fill"
+spacing = 3
+scatter = 0.2
+region = "deep_4"

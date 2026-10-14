@@ -1,0 +1,73 @@
+[canvas]
+background = "white"
+
+[search]
+candidates = 8
+refinements = 2
+
+[brushes]
+wet = { file = "../brushes/watercolour_wet.toml" }
+water = { file = "../brushes/watercolour.toml" }
+pen = { file = "../brushes/pen.toml" }
+
+[regions]
+sky = { select = [{ rectangle = { from = [0, 0], to = [1, 0.4] } }], relative = true, feather = 1.5 }
+shadow = { select = [{ luminance = [0, 0.3] }], feather = 0.3 }
+deep = { select = [{ luminance = [0, 0.15] }], feather = 0.4 }
+subject = { select = [{ luminance = [0, 0.75] }], feather = 0.2 }
+
+[strokes]
+flood = { radius = [60, 120], length = [150, 400], bend = [0.1, 0.4], jitter = 0.1, saturation = 0.6, opacity = 0.35 }
+rule = { radius = [3, 6], length = [400, 900], bend = [0.0, 0.02], pressure = "flat", angle = [-3, 3], jitter = 0.08, saturation = 0.7, opacity = 0.35 }
+hatch = { radius = [0.5, 0.8], length = [14, 30], bend = [0.0, 0.05], pressure = "flat", angle = [40, 50], palette = ["#2b2a33"], opacity = 0.8 }
+cross = { radius = [0.5, 0.8], length = [12, 26], bend = [0.0, 0.05], pressure = "flat", angle = [130, 140], palette = ["#2b2a33"], opacity = 0.8 }
+contour = { radius = [0.5, 1.0], length = [8, 40], bend = [0.0, 0.1], pressure = "fading", follow = 0.8, palette = ["#1e1d26"], opacity = 0.9 }
+
+[[layers]]
+name = "ground"
+blend = "multiply"
+brush = "wet"
+stroke = "flood"
+count = 60
+accident = 0.3
+reference = { blur = 25, gamma = 2.0, saturation = 0.5 }
+
+[[layers]]
+name = "ruled"
+blend = "multiply"
+brush = "wet"
+stroke = "rule"
+placement = "fill"
+spacing = 18
+scatter = 0.4
+region = "sky"
+
+[[layers]]
+name = "hatching"
+blend = "multiply"
+brush = "pen"
+stroke = "hatch"
+placement = "fill"
+spacing = 5
+scatter = 0.3
+region = "shadow"
+
+[[layers]]
+name = "cross hatching"
+blend = "multiply"
+brush = "pen"
+stroke = "cross"
+placement = "fill"
+spacing = 6
+scatter = 0.3
+region = "deep"
+
+[[layers]]
+name = "contours"
+blend = "multiply"
+brush = "pen"
+stroke = "contour"
+count = 1200
+placement = "edges"
+region = "subject"
+reference = { edges = 8.0 }

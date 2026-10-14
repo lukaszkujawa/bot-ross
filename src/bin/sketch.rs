@@ -1,6 +1,6 @@
 use bot_ross::brush::Brush;
 use bot_ross::color::{Blend, Hsv, Premultiplied, hex, parse_hex};
-use bot_ross::output::save_png;
+use bot_ross::output::save_image;
 use bot_ross::painting::stroke_type::PressureShape;
 use bot_ross::sketch::{Settings, Sketch, overlay};
 use bot_ross::stroke::Point;
@@ -105,7 +105,7 @@ fn main() -> Result<(), Box<dyn Error>> {
 }
 
 fn save(sketch: &Sketch, out: &PathBuf) -> Result<(), Box<dyn Error>> {
-    save_png(&sketch.render(), out)?;
+    save_image(&sketch.render(), out)?;
     println!("saved {}", out.display());
     Ok(())
 }

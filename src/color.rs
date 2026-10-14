@@ -147,6 +147,15 @@ impl Premultiplied {
         )
     }
 
+    pub fn multiply(self, below: Self) -> Self {
+        let alpha = self.over(below).alpha;
+        let through = |above: u16, under: u16| {
+            let transmitted = (OPAQUE - self.alpha + above) as u32 * (OPAQUE - below.alpha + under) as u32 / OPAQUE as u32;
+            transmitted.saturating_sub((OPAQUE - alpha) as u32) as u16
+        };
+        Self::new(through(self.red, below.red), through(self.green, below.green), through(self.blue, below.blue), alpha)
+    }
+
     pub fn mix(self, other: Self, weight: f32) -> Self {
         let lerp = |a: u16, b: u16| (a as f32 + (b as f32 - a as f32) * weight) as u16;
         Self::new(lerp(self.red, other.red), lerp(self.green, other.green), lerp(self.blue, other.blue), lerp(self.alpha, other.alpha))
@@ -155,5 +164,22 @@ impl Premultiplied {
     pub fn to_argb(self) -> u32 {
         let byte = |channel: u16| (channel as u32 * 255 / OPAQUE as u32).min(255);
         (byte(self.red) << 16) | (byte(self.green) << 8) | byte(self.blue)
+    }
+}
+
+#[derive(Clone, Copy, Debug, Default, Deserialize, PartialEq)]
+#[serde(rename_all = "lowercase")]
+pub enum Blend {
+    #[default]
+    Normal,
+    Multiply,
+}
+
+impl Blend {
+    pub fn apply(self, above: Premultiplied, below: Premultiplied) -> Premultiplied {
+        match self {
+            Self::Normal => above.over(below),
+            Self::Multiply => above.multiply(below),
+        }
     }
 }

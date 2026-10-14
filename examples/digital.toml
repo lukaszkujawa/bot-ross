@@ -33,7 +33,7 @@ shade = { radius = [
   0.0,
   0.2,
 ], pressure = "flat", jitter = 0.02 }
-detail = { radius = [
+detail = { contrast=1.2, radius = [
   1.5,
   4,
 ], length = [
@@ -44,7 +44,7 @@ detail = { radius = [
   0.1,
 ], pressure = "flat", jitter = 0.0 }
 
-hairline = { radius = [0.4, 0.6], length = [10, 80], bend = [0.0, 0.1], pressure = "flat", jitter = 0.0 }
+hairline = { contrast=1.5, radius = [0.4, 0.6], length = [10, 80], bend = [0.0, 0.1], pressure = "flat", jitter = 0.0 }
 
 [[layers]]
 name = "wash"
@@ -70,9 +70,11 @@ brush = "round"
 stroke = "detail"
 count = 8000
 
+
 [[layers]]
 name = "hairline"
 brush = "liner"
 stroke = "hairline"
 count = 1000
 placement = "edges"
+reference = { edges = 4, blur = 0, smooth = 0 }

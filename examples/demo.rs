@@ -1,12 +1,12 @@
 use bot_ross::brush::Brush;
 use bot_ross::canvas::Canvas;
-use bot_ross::color::{Hsv, Premultiplied};
+use bot_ross::color::{Blend, Hsv, Premultiplied};
 use bot_ross::stroke::{Curve, Point, Pressure, Stroke};
 use bot_ross::window::Window;
 use std::error::Error;
 
 const SIZE: usize = 1024;
-const PRESETS: [&str; 5] = ["wet_oil", "dry_brush", "knife", "calligraphy", "pen"];
+const PRESETS: [&str; 7] = ["wet_oil", "dry_brush", "knife", "calligraphy", "pen", "watercolour", "watercolour_wet"];
 const MARGIN: f32 = 0.1;
 const RADIUS_PER_LANE: f32 = 0.16;
 const SWAY_PER_LANE: f32 = 0.3;
@@ -14,7 +14,7 @@ const HAND_PRESSURE: [f32; 5] = [0.3, 0.85, 1.0, 0.8, 0.35];
 
 fn main() -> Result<(), Box<dyn Error>> {
     let mut canvas = Canvas::new(SIZE, SIZE, Premultiplied::WHITE);
-    let layer = canvas.add_layer();
+    let layer = canvas.add_layer(Blend::Normal);
     for (index, preset) in PRESETS.iter().enumerate() {
         Brush::load(format!("brushes/{preset}.toml"))?.paint(layer, &lane_stroke(index));
     }

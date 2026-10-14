@@ -6,6 +6,7 @@ pub mod paint;
 pub mod stamp;
 pub mod tip;
 mod walk;
+pub mod wash;
 
 use crate::brush::bristles::Bristles;
 use crate::brush::config::BrushConfig;
@@ -13,6 +14,7 @@ use crate::brush::line::Line;
 use crate::brush::paint::Paint;
 use crate::brush::stamp::Stamp;
 use crate::brush::tip::Tip;
+use crate::brush::wash::Wash;
 use crate::layer::Layer;
 use crate::bounds::Bounds;
 use crate::mypaint::engine::Engine;
@@ -34,6 +36,7 @@ enum Tool {
     Bristles { engine: Engine, bristles: Bristles },
     Stamp { tip: Tip, stamp: Stamp },
     Line(Line),
+    Wash(Wash),
 }
 
 impl Brush {
@@ -44,11 +47,12 @@ impl Brush {
     }
 
     pub fn from_config(config: BrushConfig, base: &Path) -> Result<Self, Box<dyn Error>> {
-        let tool = match (&config.bristles, &config.stamp, &config.line) {
-            (Some(bristles), None, None) => Tool::Bristles { engine: config.engine()?, bristles: bristles.clone() },
-            (None, Some(stamp), None) => Tool::Stamp { tip: Tip::load(base.join(&stamp.tip))?, stamp: stamp.clone() },
-            (None, None, Some(line)) => Tool::Line(*line),
-            _ => return Err(format!("brush '{}' needs exactly one of [bristles], [stamp] or [line]", config.name).into()),
+        let tool = match (&config.bristles, &config.stamp, &config.line, &config.wash) {
+            (Some(bristles), None, None, None) => Tool::Bristles { engine: config.engine()?, bristles: bristles.clone() },
+            (None, Some(stamp), None, None) => Tool::Stamp { tip: Tip::load(base.join(&stamp.tip))?, stamp: stamp.clone() },
+            (None, None, Some(line), None) => Tool::Line(*line),
+            (None, None, None, Some(wash)) => Tool::Wash(*wash),
+            _ => return Err(format!("brush '{}' needs exactly one of [bristles], [stamp], [line] or [wash]", config.name).into()),
         };
         let proxy = match &tool {
             Tool::Line(line) => line.proxy(),
@@ -70,6 +74,7 @@ impl Brush {
                 .fold(Bounds::empty(), |painted, hair| painted.union(layer.trace(engine, &hair.samples))),
             Tool::Stamp { tip, stamp } => stamp.paint(tip, layer, stroke, &self.paint, &mut rng),
             Tool::Line(line) => line.paint(layer, stroke),
+            Tool::Wash(wash) => wash.paint(layer, stroke, &self.paint, &mut rng),
         }
     }
 }

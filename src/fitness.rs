@@ -1,5 +1,5 @@
 use crate::mark::Mark;
-use crate::color::{OPAQUE, Premultiplied};
+use crate::color::{Blend, OPAQUE, Premultiplied};
 use crate::image::Image;
 use crate::layer::Layer;
 use crate::bounds::Bounds;
@@ -11,6 +11,7 @@ pub struct Fitness {
     pub width: usize,
     pub height: usize,
     reference: Vec<[u16; 3]>,
+    blend: Blend,
     below: Vec<Premultiplied>,
     current: Vec<Premultiplied>,
     composite: Vec<Premultiplied>,
@@ -20,13 +21,14 @@ pub struct Fitness {
 }
 
 impl Fitness {
-    pub fn new(reference: &Reference, below: Vec<Premultiplied>) -> Self {
+    pub fn new(reference: &Reference, below: Vec<Premultiplied>, blend: Blend) -> Self {
         let area = reference.width * reference.height;
         assert_eq!(below.len(), area, "layer below must match the reference size");
         let mut fitness = Self {
             width: reference.width,
             height: reference.height,
             reference: reference.pixels().to_vec(),
+            blend,
             composite: below.clone(),
             below,
             current: vec![Premultiplied::TRANSPARENT; area],
@@ -67,7 +69,7 @@ impl Fitness {
                     continue;
                 }
                 let index = y * self.width + x;
-                let painted = Premultiplied::from_rgb(mark.rgb_at(x, y), coverage).over(self.current[index]).over(self.below[index]);
+                let painted = self.blend.apply(self.blend.apply(Premultiplied::from_rgb(mark.rgb_at(x, y), coverage), self.current[index]), self.below[index]);
                 after += pixel_error(painted, self.reference[index], self.weight[index]) as u64;
                 before += self.error[index] as u64;
             }
@@ -88,7 +90,7 @@ impl Fitness {
         for y in bounds.top..bounds.bottom {
             for x in bounds.left..bounds.right {
                 let index = y * self.width + x;
-                self.composite[index] = self.current[index].over(self.below[index]);
+                self.composite[index] = self.blend.apply(self.current[index], self.below[index]);
                 let error = pixel_error(self.composite[index], self.reference[index], self.weight[index]);
                 self.total = self.total + error as u64 - self.error[index] as u64;
                 self.error[index] = error;

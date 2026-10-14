@@ -1,3 +1,4 @@
+use bot_ross::color::Blend;
 use bot_ross::painting::config::{PlacementMode, Target};
 use bot_ross::painting::plan::{LayerPlan, Marks, Plan};
 use bot_ross::painting::shape_type::{Points, ShapeType};
@@ -185,4 +186,30 @@ fn shape_layer_problems_are_reported() {
     assert!(error(&SHAPED.replace("angle = 45", "angel = 45")).contains("angel"));
     assert!(error(&SHAPED.replace("count = 10", "count = 10\nstroke_radius = [1, 2]")).contains("stroke_radius needs a stroke"));
     assert!(error(&BASE.replace("count = 10", "count = 10\nshape_radius = [1, 2]")).contains("shape_radius needs a shape"));
+}
+
+#[test]
+fn relative_regions_resolve_against_the_canvas() {
+    let plan = parse(&BASE.replace("face = { centre = [100, 100], radius = 50 }", "face = { centre = [0.5, 0.25], radius = 0.1, relative = true }").replace("count = 10", "count = 10\nregion = \"face\"")).unwrap();
+    let region = plan.layers[0].region.unwrap().on_canvas(200, 400);
+    assert_eq!((region.centre, region.radius), ([100.0, 100.0], 20.0));
+    assert_eq!(region.weight_at(100.0, 100.0), 3.0);
+    let fixed = parse(&BASE.replace("count = 10", "count = 10\nregion = \"face\"")).unwrap().layers[0].region.unwrap();
+    assert_eq!(fixed.on_canvas(200, 400), fixed);
+}
+
+#[test]
+fn layers_default_to_normal_blend_and_accept_multiply() {
+    assert_eq!(parse(BASE).unwrap().layers[0].blend, Blend::Normal);
+    assert_eq!(parse(&BASE.replace("count = 10", "count = 10\nblend = \"multiply\"")).unwrap().layers[0].blend, Blend::Multiply);
+}
+
+#[test]
+fn oval_regions_stretch_the_circle_vertically() {
+    let plan = parse(&BASE.replace("radius = 50 }", "radius = 50, aspect = 2.0 }").replace("count = 10", "count = 10\nregion = \"face\"")).unwrap();
+    let region = plan.layers[0].region.unwrap();
+    assert_eq!(region.weight_at(100.0, 190.0), 3.0);
+    assert_eq!(region.weight_at(190.0, 100.0), 1.0);
+    let flat = parse(&BASE.replace("radius = 50 }", "radius = 50, aspect = 0 }").replace("count = 10", "count = 10\nregion = \"face\"")).unwrap_err();
+    assert!(flat.contains("region aspect must be greater than 0"), "{flat}");
 }

@@ -1,9 +1,10 @@
-.PHONY: build run test bench demo sample
+.PHONY: build run test bench demo sample sketch
 
 REFERENCE ?= examples/reference.png
 CONFIG ?= examples/quick.toml
 SIZE ?= 512
 OUT ?= out.png
+BRUSH ?= brushes/watercolour.toml
 
 build:
 	cargo build --release
@@ -22,3 +23,6 @@ demo:
 
 sample:
 	cargo run --release --example sample
+
+sketch:
+	cargo run --release --bin sketch -- --brush $(BRUSH)

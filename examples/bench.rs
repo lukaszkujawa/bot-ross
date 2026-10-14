@@ -1,6 +1,6 @@
 use bot_ross::brush::Brush;
 use bot_ross::canvas::Canvas;
-use bot_ross::color::{Hsv, Premultiplied};
+use bot_ross::color::{Blend, Hsv, Premultiplied};
 use bot_ross::stroke::{Curve, Point, Pressure, Stroke};
 use rand::rngs::StdRng;
 use rand::{Rng, RngExt, SeedableRng};
@@ -16,7 +16,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     for preset in PRESETS {
         let mut brush = Brush::load(format!("brushes/{preset}.toml"))?;
         let mut canvas = Canvas::new(SIZE, SIZE, Premultiplied::WHITE);
-        let layer = canvas.add_layer();
+        let layer = canvas.add_layer(Blend::Normal);
         let mut rng = StdRng::seed_from_u64(1);
         let started = Instant::now();
         for seed in 0..STROKES as u64 {

@@ -1,0 +1,130 @@
+# /Users/lukasz/Downloads/land2.jpg
+[canvas]
+background = "white"
+
+[search]
+candidates = 8
+refinements = 2
+
+[brushes]
+water = { file = "../brushes/watercolour.toml" }
+wet = { file = "../brushes/watercolour_wet.toml" }
+dry = { file = "../brushes/dry_brush.toml" }
+liner = { file = "../brushes/liner.toml" }
+
+[regions]
+paper = { centre = [0.5, 0.5], radius = 0.6, relative = true, weight = 1.0, outside = 0.02, feather = 0.5 }
+subject = { aspect = 0.3, centre = [0.5, 0.55], radius = 1, relative = true, weight = 1.0, outside = 0, feather = 0.2 }
+foliage = { aspect = 0.2, centre = [0.5, 0.38], radius = 1, relative = true, weight = 1.0, outside = 0, feather = 0.15 }
+water = { aspect = 0.2, centre = [0.5, 0.8], radius = 1, relative = true, weight = 1.0, outside = 0, feather = 0.15 }
+focus = { aspect = 0.28, centre = [0.5, 0.47], radius = 0.75, relative = true, weight = 3.0, outside = 0, feather = 0.3 }
+
+[strokes]
+flood = { radius = [70, 140], length = [150, 400], bend = [0.1, 0.4], pressure = "hand", jitter = 0.15, saturation = 0.6, opacity = 0.35 }
+bleed = { radius = [40, 90], length = [10, 200], bend = [0.0, 0.3], pressure = "hand", jitter = 0.1, saturation = 0.8, opacity = 0.4 }
+mass = { radius = [8, 24], length = [10, 60], bend = [0.0, 0.2], pressure = "hand", jitter = 0.1, follow = 0.5, opacity = 0.4 }
+scrub = { radius = [3, 8], length = [8, 35], bend = [0.0, 0.15], pressure = "hand", jitter = 0.08, follow = 0.5, opacity = 0.6 }
+dab = { radius = [2, 6], length = [3, 14], bend = [0.0, 0.1], pressure = "hand", jitter = 0.08, follow = 0.3, opacity = 0.6 }
+speck = { radius = [1, 2.5], length = [2, 7], bend = [0.0, 0.05], pressure = "hand", jitter = 0.06, follow = 0.3, opacity = 0.7 }
+ripple = { radius = [6, 20], length = [40, 200], bend = [0.0, 0.0], pressure = "hand", jitter = 0.06, follow = 1, aim = [100000, 0], opacity = 0.45 }
+lap = { radius = [2, 7], length = [15, 90], bend = [0.0, 0.0], pressure = "hand", jitter = 0.06, follow = 1, aim = [100000, 0], opacity = 0.5 }
+light = { radius = [0.4, 1.0], length = [3, 12], bend = [0.0, 0.02], pressure = "flat", jitter = 0.03, follow = 0.4, contrast = 1.2, opacity = 0.9 }
+rigger = { contrast=1.1, radius = [0.4, 1.0], length = [8, 50], bend = [0.0, 0.08], pressure = "fading", jitter = 0.05, follow = 0.7, value = 0.85, opacity = 0.7 }
+
+[shapes]
+flake = { points = [3, 6], radius = [1.5, 7], irregular = 0.6, follow = 0.7, aspect = [0.3, 1.0], jitter = 0.03, contrast = 1.2, opacity = 0.9 }
+
+[[layers]]
+name = "floods"
+blend = "multiply"
+brush = "wet"
+stroke = "flood"
+count = 80
+region = "paper"
+accident = 0.4
+reference = { blur = 30, gamma = 2.5, saturation = 0.5 }
+
+[[layers]]
+name = "form"
+brush = "wet"
+stroke = "bleed"
+count = 200
+region = "subject"
+accident = 0.1
+
+[[layers]]
+name = "masses"
+brush = "wet"
+stroke = "mass"
+count = 800
+region = "foliage"
+accident = 0.1
+reference = { blur = 4 }
+
+[[layers]]
+name = "water"
+brush = "wet"
+stroke = "ripple"
+count = 900
+region = "water"
+reference = { blur = 3 }
+
+[[layers]]
+name = "ripples"
+brush = "wet"
+stroke = "lap"
+count = 800
+region = "water"
+reference = { edges = 2.0 }
+
+[[layers]]
+name = "texture"
+brush = "dry"
+stroke = "scrub"
+count = 1000
+region = "foliage"
+accident = 0.05
+reference = { edges = 3.0 }
+
+[[layers]]
+name = "dabs"
+brush = "water"
+stroke = "dab"
+count = 2000
+region = "foliage"
+reference = { edges = 5.0 }
+
+[[layers]]
+name = "specks"
+brush = "water"
+stroke = "speck"
+count = 2000
+region = "foliage"
+reference = { edges = 8.0 }
+
+[[layers]]
+name = "accents"
+blend = "multiply"
+brush = "liner"
+stroke = "rigger"
+count = 300
+region = "foliage"
+placement = "edges"
+reference = { edges = 8.0 }
+
+[[layers]]
+name = "flakes"
+shape = "flake"
+count = 3000
+region = "focus"
+placement = "edges"
+reference = { edges = 8.0 }
+
+[[layers]]
+name = "highlights"
+brush = "liner"
+stroke = "light"
+count = 1000
+region = "focus"
+placement = "edges"
+reference = { edges = 10.0 }

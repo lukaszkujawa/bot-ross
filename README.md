@@ -37,7 +37,18 @@ make run CONFIG=examples/oil_portrait.toml SIZE=1024
 make demo                # one stroke per brush preset, stacked
 make bench               # 1,000 random strokes per brush preset with timings
 make test
+make sketch BRUSH=brushes/watercolour_wet.toml   # draw by hand with a brush preset
 ```
+
+## Sketching with a brush
+
+`sketch` opens a blank canvas where you draw strokes by hand with any brush preset, to see what a brush does before putting it in a config. Each mouse drag becomes one stroke, fitted to a curve through the drag; a click makes a dab.
+
+```sh
+cargo run --release --bin sketch -- --brush brushes/watercolour.toml --size 1000 --out sketch.png --blend multiply --radius 20 --opacity 0.6 --colour "#1f3a5f" --background "#ffffff"
+```
+
+Every flag but `--brush` is optional with the default shown. While drawing, `[` and `]` change the radius, `-` and `=` the opacity, `C` cycles through a small palette, `P` cycles the pressure shape, `X` clears the canvas, `S` saves, and Escape saves and quits. The current settings are printed whenever they change.
 
 ## Configuration
 
@@ -93,6 +104,8 @@ fill = { style = "hatch", spacing = [3, 6], width = 1.2, angle = [30, 60], cross
 [regions.face]
 centre = [512, 380]
 radius = 260
+relative = false                 # true reads centre as fractions of the canvas width and height and radius as a fraction of its shorter side, for configs that must fit any framing; default false
+aspect = 1.0                     # height of the region over its width: below 1 squashes the circle into a wide oval, above 1 stretches it into a tall one; default 1
 weight = 3.0                     # error multiplier inside the circle; default 3.0
 outside = 1.0                    # multiplier far outside; below 1 lets the edges stay rough or unfilled; default 1.0
 feather = 0.5                    # fraction of the radius over which weight blends into outside; default 0.5
@@ -104,6 +117,7 @@ stroke = "bold"                  # name, or inline { radius = [..], length = [..
 count = 400
 region = "face"                  # optional
 placement = "error"              # "error" | "edges" | "random"; default "error"
+blend = "normal"                 # "normal" | "multiply": how the layer composites over the painting below, in the search and in the result; default "normal"
 reference = { blur = 12, smooth = 6, edges = 2.0, levels = 6, contrast = 1.2, saturation = 1.3, gamma = 1.0 }   # optional target tweaks, see below
 accident = 0.0                   # chance to keep a stroke that does not lower the error, for deliberate marks; default 0
 skip = false                     # true leaves the layer out of the painting; default false
@@ -119,9 +133,9 @@ count = 1200
 shape_fill = { style = "dots", spacing = 4, radius = 1.2 }   # shape_ overrides work the same way
 ```
 
-Each layer is painted on its own transparent layer over everything below, so a painting is built from coarse to fine. A layer's `reference` table changes what it is judged against: `blur` softens the target so broad strokes are scored on masses rather than detail they cannot paint, and stroke colours are sampled from the softened target too; `edges` multiplies the error along contours by one plus that factor so detail layers concentrate on getting edges right. `smooth` runs an edge-preserving filter with that spatial sigma in pixels, which flattens shading and noise inside a surface while keeping real boundaries sharp, the basis of a clean stylised look; `levels` posterises the target into that many tones per channel, `contrast` and `saturation` scale it around mid grey, for flat, clearly separated planes in a stylised look, and `gamma` above 1 lifts the midtones so a dark subject can be drawn lighter than life, as an etcher would, while below 1 deepens them; blur is applied first, so a small blur before posterising gives clean regions with crisp boundaries. All default to leaving the reference untouched. Stroke colour is sampled from the reference under the stroke, or drawn from the stroke's `palette` when one is given, then scaled by the stroke's `saturation`, `value` and `contrast`, and mutated by `jitter` in value and saturation, with a small hue drift. A layer's `reference = { saturation = 0 }` is different: it makes the layer judge the painting against a grey target, so the whole result turns monochrome, while a stroke's own `saturation` only changes the palette of its marks. `follow` makes a stroke trace the reference's contours: its direction starts near the local contour tangent and is pulled back toward it at every step along its length, so strokes curve around shapes, with the pull scaled by the value and the local edge strength; flat areas stay random. With `aim` set, the contour field is replaced by straight lines through that point, so strokes lead the eye toward a focus. `placement` decides where strokes start: where the painting is still worst, along edges in the reference, or anywhere.
+Each layer is painted on its own transparent layer over everything below, so a painting is built from coarse to fine. A layer's `blend` chooses how it meets the painting below: `normal` covers it like opaque paint, while `multiply` passes light through it like transparent pigment, so a mark can only darken what is already there and layered colours mix as glazes; the marks within a multiply layer combine the same way, and the search scores candidates with the layer's blend. A layer's `reference` table changes what it is judged against: `blur` softens the target so broad strokes are scored on masses rather than detail they cannot paint, and stroke colours are sampled from the softened target too; `edges` multiplies the error along contours by one plus that factor so detail layers concentrate on getting edges right. `smooth` runs an edge-preserving filter with that spatial sigma in pixels, which flattens shading and noise inside a surface while keeping real boundaries sharp, the basis of a clean stylised look; `levels` posterises the target into that many tones per channel, `contrast` and `saturation` scale it around mid grey, for flat, clearly separated planes in a stylised look, and `gamma` above 1 lifts the midtones so a dark subject can be drawn lighter than life, as an etcher would, while below 1 deepens them; blur is applied first, so a small blur before posterising gives clean regions with crisp boundaries. All default to leaving the reference untouched. Stroke colour is sampled from the reference under the stroke, or drawn from the stroke's `palette` when one is given, then scaled by the stroke's `saturation`, `value` and `contrast`, and mutated by `jitter` in value and saturation, with a small hue drift. A layer's `reference = { saturation = 0 }` is different: it makes the layer judge the painting against a grey target, so the whole result turns monochrome, while a stroke's own `saturation` only changes the palette of its marks. `follow` makes a stroke trace the reference's contours: its direction starts near the local contour tangent and is pulled back toward it at every step along its length, so strokes curve around shapes, with the pull scaled by the value and the local edge strength; flat areas stay random. With `aim` set, the contour field is replaced by straight lines through that point, so strokes lead the eye toward a focus. `placement` decides where strokes start: where the painting is still worst, along edges in the reference, or anywhere.
 
-Unknown keys and names are errors, and all problems in a file are reported at once. See `examples/quick.toml` for the smallest useful painting, `examples/oil_portrait.toml` for a four-layer oil painting, `examples/digital.toml` for a smooth hyper-realistic digital look, `examples/painterly.toml` and `examples/painterly_portrait.toml` for expressive strokes around a refined face, `examples/stylised.toml` for smooth planes with crisp edges, `examples/focus.toml` for a refined focus surrounded by rigid marks leading toward it, `examples/mosaic.toml` for polygons with every fill style over a knife ground, `examples/pencil.toml` for an etching in ink on paper: drawn contours, hatch families that follow the form and cross-hatched shadows, `examples/pencil2.toml` for the same drawing in white chalk on black paper, which suits dark images with a lit subject, and `examples/watercolour.toml` for soft invented-palette washes and splatter around a digitally painted figure. Configs with a `face` region expect the face near the middle of a 1024px portrait; move the region for other framings.
+Unknown keys and names are errors, and all problems in a file are reported at once. See `examples/quick.toml` for the smallest useful painting, `examples/oil_portrait.toml` for a four-layer oil painting, `examples/digital.toml` for a smooth hyper-realistic digital look, `examples/painterly.toml` and `examples/painterly_portrait.toml` for expressive strokes around a refined face, `examples/stylised.toml` for smooth planes with crisp edges, `examples/focus.toml` for a refined focus surrounded by rigid marks leading toward it, `examples/mosaic.toml` for polygons with every fill style over a knife ground, `examples/pencil.toml` for an etching in ink on paper: drawn contours, hatch families that follow the form and cross-hatched shadows, `examples/pencil2.toml` for the same drawing in white chalk on black paper, which suits dark images with a lit subject, and `examples/watercolour.toml` for a watercolour whose sharpness grades from the bottom of the image to the top, as in a street scene: wet floods and bleeds everywhere, then soft masses, straight vertical and horizontal washes for architecture and crisp patch-grabbing flakes in three bottom-anchored bands with long feathers so detail thins gradually upward, and specks, short dark rigger lines and bright liner accents densest along the bottom, with the wash layers set to `multiply` so the washes glaze one another instead of covering, and `examples/watercolour_realistic.toml` for a more literal watercolour landscape: the same floods and bleeds, then foliage built from soft masses, dry-brush texture and short dabs rather than contour lines, a lake laid in horizontal washes, a few dark rigger lines for trunks and branches, and a final sharpening pass of crisp flakes and short bright lines along the edges in a focus band. Configs with a `face` region in pixels expect the face near the middle of a 1024px portrait; move the region for other framings, or use relative regions as the watercolour example does.
 
 ## How a stroke is chosen
 
@@ -172,6 +186,17 @@ The `[stamp]` tool sweeps a vector brush tip along the stroke instead, for rigid
 
 The `[line]` tool draws the stroke as a plain anti-aliased line of the stroke's colour at any radius, including sub-pixel ones that paint fainter rather than thinner; it has one key, `opacity`. It ignores the engine and paint sections and is exact for the search, so it never rejects a stroke.
 
+The `[wash]` tool floods the stroke with transparent pigment the way a loaded watercolour brush does. The mark is a field of pigment density: the water spreads past the stroke into lobes, pigment settles into a darker rim where the wash dries, the paper's tooth granulates the interior, and pooling pulls the colour warm or cool from place to place. Opacity grows with density like layers of pigment, so overlapping washes darken each other instead of covering, and the colour darkens where pigment concentrates. The rim and the crisp edge only form on dry paper: where a wash lands on paint already in its layer it is wet-in-wet, so its edge bleeds softly into the earlier wash and no rim is left between them. The stroke's `opacity` sets the strength of the wash and its `[paint]` section the gradient along it: `depletion` and `fade` let a wash run pale toward the end.
+
+| Key | Meaning |
+|---|---|
+| `bloom` | how far the water spreads past the stroke, as a fraction of the radius; also how lobed the outline is |
+| `softness` | typical width of the outer edge as a fraction of the radius; the width varies along the edge, so small values give the crisp line of a dried wash and large ones an irregular gradient, crisp in places and diffuse in others |
+| `rim` | extra pigment settled along the edge; 0 for wet-in-wet washes with no outer line |
+| `granulation` | fine paper texture in the interior |
+| `pooling` | slow density variation across the wash |
+| `drift` | hue shift, as a fraction of the hue circle, between pooled and thin areas |
+
 The paint layer models how much paint the tool carries and how it leaves the canvas.
 
 | Key | Meaning |
@@ -190,6 +215,8 @@ Presets in `brushes/` follow the physics of each tool:
 - **Pen** is a single monoline: constant width and full opacity whatever the pressure.
 - **Airbrush** is a single very soft, low-opacity hair for smooth gradients, and **Soft round** a semi-soft one for detail without hard patches; `examples/digital.toml` builds a hyper-realistic digital look from them and the pen.
 - **Palette knife** is a rigid blade: an irregular, sharp-edged vector tip swept along the stroke as a single flat sheet, with scrape streaks, pushed paint, and paint landing in scattered patches that open up as the blade runs dry.
+- **Watercolour** is a wash dried on the paper: pigment blooms past the stroke in lobes, dries to a darker rim, granulates on the paper and pools warm or cool, and runs pale as the brush empties.
+- **Wet watercolour** is the same wash laid wet-in-wet: no rim, a wide and irregular gradient at the edge and stronger pooling, for skies and soft masses; `examples/watercolour.toml` floods the background and glazes the focus with it and keeps the dried wash for masses, accents and drops.
 
 ## Features
 
@@ -198,6 +225,6 @@ Presets in `brushes/` follow the physics of each tool:
 - Polygons with a vertex count range, radius range and irregularity, filled solid, hatched, dotted or outlined
 - Strokes follow cubic Bézier curves with a pressure profile that eases in and out like a hand
 - Strokes rendered by libmypaint with a bristle and paint-load model on top
-- Brushes defined in TOML: engine settings, input dynamics, bristles or a vector stamp, paint
-- Wet oil, dry brush, palette knife, calligraphy, pen, airbrush, soft round, hard round and liner presets
+- Brushes defined in TOML: engine settings, input dynamics, bristles, a vector stamp or a watercolour wash, paint
+- Wet oil, dry brush, palette knife, dried and wet watercolour, calligraphy, pen, airbrush, soft round, hard round and liner presets
 - Live window while painting, PNG output, optional snapshots

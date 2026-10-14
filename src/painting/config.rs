@@ -1,3 +1,4 @@
+use crate::color::Blend;
 use crate::painting::shape_type::ShapeType;
 use crate::painting::stroke_type::StrokeType;
 use crate::reference::Reference;
@@ -76,11 +77,24 @@ pub struct Region {
     pub outside: f32,
     #[serde(default = "half")]
     pub feather: f32,
+    #[serde(default)]
+    pub relative: bool,
+    #[serde(default = "one")]
+    pub aspect: f32,
 }
 
 impl Region {
+    pub fn on_canvas(self, width: usize, height: usize) -> Self {
+        if !self.relative {
+            return self;
+        }
+        let (width, height) = (width as f32, height as f32);
+        Self { centre: [self.centre[0] * width, self.centre[1] * height], radius: self.radius * width.min(height), relative: false, ..self }
+    }
+
     pub fn weight_at(&self, x: f32, y: f32) -> f32 {
-        let beyond = (x - self.centre[0]).hypot(y - self.centre[1]) - self.radius;
+        let (dx, dy) = (x - self.centre[0], (y - self.centre[1]) / self.aspect);
+        let beyond = dx.hypot(dy) - self.radius;
         let t = (beyond / (self.radius * self.feather).max(f32::EPSILON)).clamp(0.0, 1.0);
         self.weight + (self.outside - self.weight) * t * t * (3.0 - 2.0 * t)
     }
@@ -155,6 +169,8 @@ pub struct LayerConfig {
     pub region: Option<Named<Region>>,
     #[serde(default)]
     pub placement: PlacementMode,
+    #[serde(default)]
+    pub blend: Blend,
     #[serde(default)]
     pub reference: Target,
     #[serde(default)]

@@ -1,4 +1,4 @@
-use bot_ross::color::{Hsv, OPAQUE, Premultiplied};
+use bot_ross::color::{Blend, Hsv, OPAQUE, Premultiplied};
 
 #[test]
 fn transparent_over_white_stays_white() {
@@ -44,4 +44,17 @@ fn rgb_to_hsv_round_trips() {
         assert!(rgb.iter().zip(back).all(|(a, b)| (a - b).abs() < 1e-5), "{rgb:?} -> {back:?}");
     }
     assert_eq!(Hsv::from_rgb([0.0, 0.0, 1.0]).hue, 2.0 / 3.0);
+}
+
+#[test]
+fn multiply_glazes_like_transparent_pigment() {
+    let glaze = Premultiplied::from_rgb([1.0, 0.5, 0.0], 0.5);
+    let on_white = glaze.multiply(Premultiplied::WHITE);
+    assert_eq!(on_white.alpha, OPAQUE);
+    assert_eq!(on_white.to_rgb().map(|c| (c * 100.0).round()), [100.0, 75.0, 50.0]);
+    let dark = Premultiplied::from_rgb([0.2, 0.2, 0.2], 1.0);
+    let lightened = Premultiplied::from_rgb([1.0, 1.0, 1.0], 0.9).multiply(dark);
+    assert_eq!(lightened, dark);
+    assert_eq!(glaze.multiply(Premultiplied::TRANSPARENT), glaze);
+    assert_eq!(Blend::Normal.apply(glaze, dark), glaze.over(dark));
 }

@@ -1,5 +1,5 @@
 use bot_ross::canvas::Canvas;
-use bot_ross::color::Premultiplied;
+use bot_ross::color::{Blend, Premultiplied};
 use bot_ross::evolve::progress::Progress;
 use bot_ross::painter::paint_layer;
 use bot_ross::painting::config::{OutputConfig, PlacementMode, Target};
@@ -18,6 +18,7 @@ fn plan(count: usize) -> LayerPlan {
         count,
         region: None,
         placement: PlacementMode::Error,
+        blend: Blend::Normal,
         reference: Target::default(),
         accident: 0.0,
         candidates: 6,

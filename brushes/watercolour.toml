@@ -1,0 +1,17 @@
+name = "Watercolour"
+
+[wash]
+bloom = 0.4
+softness = 0.12
+rim = 1.0
+granulation = 0.35
+pooling = 0.35
+drift = 0.05
+
+[paint]
+depletion = 0.3
+fade = 0.3
+
+[proxy]
+opacity = 1.0
+width = 1.1

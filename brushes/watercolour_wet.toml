@@ -1,0 +1,17 @@
+name = "Wet watercolour"
+
+[wash]
+bloom = 0.5
+softness = 0.35
+rim = 0.0
+granulation = 0.25
+pooling = 0.5
+drift = 0.06
+
+[paint]
+depletion = 0.3
+fade = 0.3
+
+[proxy]
+opacity = 0.7
+width = 1.15

@@ -1,6 +1,6 @@
 use bot_ross::mypaint::engine::Sample;
 use bot_ross::canvas::Canvas;
-use bot_ross::color::{Hsv, Premultiplied};
+use bot_ross::color::{Blend, Hsv, Premultiplied};
 use bot_ross::layer::Layer;
 use bot_ross::bounds::Bounds;
 use bot_ross::mypaint::engine::Engine;
@@ -39,7 +39,7 @@ fn empty_canvas_renders_white() {
 #[test]
 fn traced_path_on_canvas_turns_pixels_red() {
     let mut canvas = Canvas::new(100, 100, Premultiplied::WHITE);
-    canvas.add_layer().trace(&mut red_engine(), &diagonal());
+    canvas.add_layer(Blend::Normal).trace(&mut red_engine(), &diagonal());
     let centre = canvas.render().argb[50 * 100 + 50];
     assert!(centre >> 16 > centre & 0xff);
 }

@@ -1,4 +1,4 @@
-use crate::color::Premultiplied;
+use crate::color::{Blend, Premultiplied};
 use crate::image::Image;
 use crate::layer::Layer;
 
@@ -14,16 +14,20 @@ impl Canvas {
         Self { width, height, background, layers: Vec::new() }
     }
 
-    pub fn add_layer(&mut self) -> &mut Layer {
-        self.layers.push(Layer::new(self.width, self.height));
+    pub fn add_layer(&mut self, blend: Blend) -> &mut Layer {
+        self.layers.push(Layer::blended(self.width, self.height, blend));
         self.layers.last_mut().expect("layer was just pushed")
+    }
+
+    pub fn top(&mut self) -> Option<&mut Layer> {
+        self.layers.last_mut()
     }
 
     pub fn composite(&self) -> Vec<Premultiplied> {
         let mut composite = vec![self.background; self.width * self.height];
         for layer in &self.layers {
             for (below, above) in composite.iter_mut().zip(layer.pixels()) {
-                *below = above.over(*below);
+                *below = layer.mode().apply(above, *below);
             }
         }
         composite

@@ -1,5 +1,5 @@
 use crate::bounds::Bounds;
-use crate::color::{OPAQUE, Premultiplied};
+use crate::color::{Blend, OPAQUE, Premultiplied};
 use crate::mypaint::engine::{Engine, Sample};
 use crate::mypaint::ffi::MyPaintRectangle;
 use crate::mypaint::surface::Surface;
@@ -7,15 +7,24 @@ use crate::stroke::Point;
 
 pub struct Layer {
     surface: Surface,
+    blend: Blend,
     pub width: usize,
     pub height: usize,
 }
 
 impl Layer {
     pub fn new(width: usize, height: usize) -> Self {
-        let layer = Self { surface: Surface::new(width, height), width, height };
+        Self::blended(width, height, Blend::Normal)
+    }
+
+    pub fn blended(width: usize, height: usize, blend: Blend) -> Self {
+        let layer = Self { surface: Surface::new(width, height), blend, width, height };
         layer.surface.visit_mut(layer.whole(), |_, _, channels| channels.fill(0));
         layer
+    }
+
+    pub fn mode(&self) -> Blend {
+        self.blend
     }
 
     pub fn trace(&mut self, engine: &mut Engine, samples: &[Sample]) -> Bounds {
@@ -26,7 +35,7 @@ impl Layer {
         self.surface.visit_mut(bounds, |x, y, channels| {
             let pixel = paint(x, y);
             if pixel.alpha > 0 {
-                channels.copy_from_slice(&pixel.over(clamped(channels)).to_channels());
+                channels.copy_from_slice(&self.blend.apply(pixel, clamped(channels)).to_channels());
             }
         });
         bounds

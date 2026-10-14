@@ -1,3 +1,4 @@
+use crate::color::Blend;
 use crate::painting::config::{LayerConfig, Named, OutputConfig, PaintingConfig, PlacementMode, Region, SearchConfig, Target};
 use crate::painting::shape_type::ShapeType;
 use crate::painting::stroke_type::StrokeType;
@@ -23,6 +24,7 @@ pub struct LayerPlan {
     pub count: usize,
     pub region: Option<Region>,
     pub placement: PlacementMode,
+    pub blend: Blend,
     pub reference: Target,
     pub accident: f32,
     pub candidates: usize,
@@ -89,6 +91,9 @@ fn resolve(index: usize, layer: &LayerConfig, painting: &PaintingConfig, base: &
     let label = format!("layer {index} \"{}\"", layer.name);
     let mut report = |problem: String| problems.push(format!("{label}: {problem}"));
     let region = layer.region.as_ref().and_then(|named| lookup(named, &painting.regions, "region", "regions").and_then(|region| overridden(region, &layer.overrides, "region_")).map_err(&mut report).ok());
+    if region.is_some_and(|region| region.aspect <= 0.0) {
+        report("region aspect must be greater than 0".into());
+    }
     for key in layer.overrides.keys() {
         let (kind, _) = key.split_once('_').unwrap_or((key, ""));
         let defined = match kind {
@@ -130,6 +135,7 @@ fn resolve(index: usize, layer: &LayerConfig, painting: &PaintingConfig, base: &
         count: layer.count,
         region,
         placement: layer.placement,
+        blend: layer.blend,
         reference: layer.reference,
         accident: layer.accident,
         candidates: layer.candidates.unwrap_or(painting.search.candidates),

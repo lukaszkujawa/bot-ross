@@ -1,6 +1,6 @@
 mod filters;
 
-use crate::color::{OPAQUE, luminance};
+use crate::color::{OPAQUE, Premultiplied, luminance};
 use crate::stroke::{Curve, Point};
 use image::imageops::FilterType;
 use std::error::Error;
@@ -32,6 +32,12 @@ impl Reference {
     pub fn from_pixels(width: usize, height: usize, rgb: Vec<[u16; 3]>) -> Self {
         assert_eq!(rgb.len(), width * height, "reference pixel count");
         Self { width, height, rgb }
+    }
+
+    pub fn glaze_over(&self, below: &[Premultiplied]) -> Self {
+        let needed = |target: u16, under: u16| if under == 0 { OPAQUE } else { ((target as u32 * OPAQUE as u32 / under as u32).min(OPAQUE as u32)) as u16 };
+        let rgb = self.rgb.iter().zip(below).map(|(target, under)| [needed(target[0], under.red), needed(target[1], under.green), needed(target[2], under.blue)]).collect();
+        Self::from_pixels(self.width, self.height, rgb)
     }
 
     pub fn pixels(&self) -> &[[u16; 3]] {

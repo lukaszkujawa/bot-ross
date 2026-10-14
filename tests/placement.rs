@@ -1,4 +1,4 @@
-use bot_ross::color::Premultiplied;
+use bot_ross::color::{Blend, Premultiplied};
 use bot_ross::fitness::Fitness;
 use bot_ross::painting::config::PlacementMode;
 use bot_ross::placement::Placement;
@@ -10,7 +10,7 @@ use rand::rngs::StdRng;
 fn picks_land_where_the_error_is() {
     let reference = Reference::from_rgb8(128, 96, &vec![255; 128 * 96 * 3]);
     let below: Vec<Premultiplied> = (0..128 * 96).map(|i| if (64..96).contains(&(i % 128)) && (32..64).contains(&(i / 128)) { Premultiplied::new(0, 0, 0, 32768) } else { Premultiplied::WHITE }).collect();
-    let fitness = Fitness::new(&reference, below);
+    let fitness = Fitness::new(&reference, below, Blend::Normal);
     let placement = Placement::new(&fitness, PlacementMode::Error, None, 32);
     let mut rng = StdRng::seed_from_u64(1);
     for _ in 0..100 {

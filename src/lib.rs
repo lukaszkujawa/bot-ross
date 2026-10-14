@@ -17,5 +17,6 @@ pub mod placement;
 pub mod proxy;
 pub mod reference;
 pub mod shape;
+pub mod sketch;
 pub mod stroke;
 pub mod window;

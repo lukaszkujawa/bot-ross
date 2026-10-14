@@ -1,3 +1,4 @@
+use bot_ross::color::Premultiplied;
 use bot_ross::reference::Reference;
 use bot_ross::stroke::{Curve, Point};
 
@@ -91,4 +92,14 @@ fn smoothing_flattens_noise_but_keeps_a_step_edge() {
     };
     assert!(spread(&smooth, 5..25) < spread(&noisy, 5..25) / 4, "{} vs {}", spread(&smooth, 5..25), spread(&noisy, 5..25));
     assert!(smooth.pixel(29, 10)[0] < 10000 && smooth.pixel(30, 10)[0] > 24000, "{:?} {:?}", smooth.pixel(29, 10), smooth.pixel(30, 10));
+}
+
+#[test]
+fn glaze_palette_is_the_target_divided_by_what_lies_below() {
+    let target = Reference::from_pixels(3, 1, vec![[16384, 16384, 16384]; 3]);
+    let below = [Premultiplied::WHITE, Premultiplied::from_rgb([0.5, 0.5, 0.5], 1.0), Premultiplied::from_rgb([0.0, 0.25, 1.0], 1.0)];
+    let glaze = target.glaze_over(&below);
+    assert_eq!(glaze.pixel(0, 0), [16384, 16384, 16384]);
+    assert_eq!(glaze.pixel(1, 0), [32768, 32768, 32768]);
+    assert_eq!(glaze.pixel(2, 0), [32768, 32768, 16384]);
 }

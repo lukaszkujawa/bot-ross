@@ -2,6 +2,7 @@ use crate::brush::bristles::Bristles;
 use crate::brush::line::Line;
 use crate::brush::paint::Paint;
 use crate::brush::stamp::Stamp;
+use crate::brush::wash::Wash;
 use crate::mypaint::engine::Engine;
 use crate::proxy::Proxy;
 use serde::Deserialize;
@@ -21,6 +22,7 @@ pub struct BrushConfig {
     pub bristles: Option<Bristles>,
     pub stamp: Option<Stamp>,
     pub line: Option<Line>,
+    pub wash: Option<Wash>,
     #[serde(default)]
     pub paint: Paint,
     #[serde(default)]

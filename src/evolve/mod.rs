@@ -5,6 +5,8 @@ pub mod shapes;
 pub mod strokes;
 
 use crate::bounds::Bounds;
+use crate::color::Blend;
+use std::borrow::Cow;
 use crate::canvas::Canvas;
 use crate::evolve::family::Family;
 use crate::evolve::progress::Progress;
@@ -40,23 +42,28 @@ pub fn run_layer<F: Family>(
 ) -> Result<Outcome, Box<dyn Error>> {
     let (width, height) = (canvas.width, canvas.height);
     let target = plan.reference.prepare(reference);
-    let mut fitness = Fitness::new(&target, canvas.composite());
+    let below = canvas.composite();
+    let palette: Cow<Reference> = match plan.blend {
+        Blend::Multiply => Cow::Owned(target.glaze_over(&below)),
+        Blend::Normal => Cow::Borrowed(&target),
+    };
+    let mut fitness = Fitness::new(&target, below, plan.blend);
     let edges = (plan.placement == PlacementMode::Edges || plan.reference.edges > 0.0).then(|| reference.edges());
     if plan.region.is_some() || plan.reference.edges > 0.0 {
         fitness.weigh(|x, y| {
-            let region = plan.region.map_or(1.0, |region| region.weight_at(x as f32, y as f32));
+            let region = plan.region.map_or(1.0, |region| region.on_canvas(width, height).weight_at(x as f32, y as f32));
             let contour = edges.as_ref().map_or(0.0, |edges| edges[y * width + x]);
             region * (1.0 + plan.reference.edges * contour)
         });
     }
     let mut placement = Placement::new(&fitness, plan.placement, edges, CELL);
     let searcher = Search { family, candidates: plan.candidates.max(1), refinements: plan.refinements };
-    let layer = canvas.add_layer();
+    let layer = canvas.add_layer(plan.blend);
     let mut outcome = Outcome::default();
     let started = Instant::now();
     while outcome.placed < plan.count && outcome.attempts < plan.count * plan.patience.max(1) && !progress.stopped {
         outcome.attempts += 1;
-        let (candidate, delta) = searcher.run(placement.pick(rng), &fitness, &target, rng);
+        let (candidate, delta) = searcher.run(placement.pick(rng), &fitness, &palette, rng);
         let forgiven = plan.accident > 0.0 && rng.random_range(0.0..1.0) < plan.accident;
         if delta >= 0 && !forgiven {
             continue;
